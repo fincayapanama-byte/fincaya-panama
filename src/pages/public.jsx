@@ -6,6 +6,17 @@ import { BRAND, PROVINCES, money, slugify, waLink } from '../lib/config'
 import { IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, handle } from '../components/icons'
 import { AdSlot, Ago, FavButton, Grid, Loading, PriceTable, Seo, Verified, ListingCard } from '../components/ui'
 
+// Ordena el resumen de precios. En alza/baja, lo más reciente va primero ante empates.
+export function sortPrices(list, order) {
+  const l = [...list]
+  const byDate = (a, b) => b.date.localeCompare(a.date)
+  if (order === 'alza') return l.sort((a, b) => byDate(a, b) || b.change - a.change)
+  if (order === 'baja') return l.sort((a, b) => byDate(a, b) || a.change - b.change)
+  if (order === 'caro') return l.sort((a, b) => b.price - a.price)
+  if (order === 'barato') return l.sort((a, b) => a.price - b.price)
+  return l.sort((a, b) => a.product_name.localeCompare(b.product_name))
+}
+
 const provBySlug = (s) => PROVINCES.find((p) => slugify(p) === s)
 
 // ================================ HOME ================================
@@ -40,12 +51,20 @@ export function Home() {
   const cats = useAsync(() => api.categories(), [])
   const featured = useAsync(() => api.listings({ featured: true, limit: 8 }), [])
   const recent = useAsync(() => api.listings({ limit: 8 }), [])
-  const prices = useAsync(() => api.prices({ days: 10 }).then((all) => {
+  const prices = useAsync(() => api.prices({ days: 10 }), [])
+  const [priceView, setPriceView] = useState('alza')
+  const homePrices = useMemo(() => {
+    const all = prices.data
+    if (!all) return null
     const FEATURED = ['name', 'yuca', 'otoe', 'platano', 'tomate', 'cebolla', 'papa', 'arroz', 'aji', 'zapallo', 'lechon', 'cerdo', 'ganado', 'novillo']
+    const ima = all.filter((p) => p.source === 'IMA' && p.market === 'Merca Panamá')
+    const today = ima.reduce((m, p) => (p.date > m ? p.date : m), '')
+    const fresh = ima.filter((p) => p.date === today)
+    if (priceView === 'alza') return sortPrices(fresh.filter((p) => p.change > 0), 'alza').slice(0, 8)
+    if (priceView === 'baja') return sortPrices(fresh.filter((p) => p.change < 0), 'baja').slice(0, 8)
     const own = all.filter((p) => p.source !== 'IMA')
-    const ima = all.filter((p) => p.source === 'IMA' && p.market === 'Merca Panamá' && FEATURED.some((f) => p.product_slug.startsWith(f)))
-    return [...own, ...ima].slice(0, 8)
-  }), [])
+    return [...own, ...fresh.filter((p) => FEATURED.some((f) => p.product_slug.startsWith(f)))].slice(0, 8)
+  }, [prices.data, priceView])
   const counts = useAsync(() => api.provinceCounts(), [])
   const roots = (cats.data || []).filter((c) => !c.parent_slug)
   return (
@@ -99,8 +118,16 @@ export function Home() {
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Precios de referencia</h2><Link className="more" to="/precios">Ver todos <IcoArrow /></Link></div>
-        <PriceTable rows={prices.data} compact />
+        <div className="section__head"><h2>Precios del día</h2><Link className="more" to="/precios">Ver todos <IcoArrow /></Link></div>
+        <div className="chips" role="tablist">
+          {[['alza', '▲ Mayores alzas'], ['baja', '▼ Mayores bajas'], ['destacados', 'Destacados']].map(([k, t]) => (
+            <button key={k} role="tab" aria-selected={priceView === k} className={`chip ${priceView === k ? 'is-on' : ''}`} onClick={() => setPriceView(k)}>{t}</button>
+          ))}
+        </div>
+        {homePrices && !homePrices.length && priceView !== 'destacados'
+          ? <p className="empty">Hoy no hay {priceView === 'alza' ? 'alzas' : 'bajas'} respecto al día anterior en Merca Panamá.</p>
+          : <PriceTable rows={homePrices} compact />}
+        <p className="muted small">Merca Panamá · fuente <a href="https://sipan.ima.gob.pa" target="_blank" rel="noopener">IMA</a>. Variación contra el día anterior.</p>
       </section>
 
       <section className="wrap section">
@@ -365,7 +392,8 @@ export function Prices() {
   const { data } = useAsync(() => (markets.loading ? Promise.resolve(null) : api.prices({ days, market: sel || null })), [days, sel, markets.loading])
   const [q, setQ] = useState('')
   const norm = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  const rows = useMemo(() => (data || []).filter((p) => !q || norm(p.product_name).includes(norm(q))), [data, q])
+  const [order, setOrder] = useState('az')
+  const rows = useMemo(() => sortPrices((data || []).filter((p) => !q || norm(p.product_name).includes(norm(q))), order), [data, q, order])
   const last = (data || []).reduce((m, p) => (p.date > m ? p.date : m), '')
   return (
     <div className="wrap section">
@@ -384,6 +412,10 @@ export function Prices() {
         <input placeholder="Buscar producto (ej. ñame, tomate, yuca)" value={q} onChange={(e) => setQ(e.target.value)} />
         <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
           <option value={7}>Últimos 7 días</option><option value={30}>Últimos 30 días</option><option value={90}>Últimos 90 días</option>
+        </select>
+        <select value={order} onChange={(e) => setOrder(e.target.value)} aria-label="Ordenar">
+          <option value="az">Ordenar: A–Z</option><option value="alza">Mayor alza diaria</option><option value="baja">Mayor baja diaria</option>
+          <option value="caro">Precio: mayor a menor</option><option value="barato">Precio: menor a mayor</option>
         </select>
       </div>
       {data && <p className="muted small">{rows.length} productos{last && ` · actualizado al ${last}`}</p>}
