@@ -1,3 +1,4 @@
+import { IcoFacebook, IcoInstagram, IcoTikTok, IcoWhatsApp } from './icons'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { BRAND, money, waLink, timeAgo } from '../lib/config'
@@ -57,10 +58,10 @@ export function Footer() {
         <div>
           <img className="ftr__logo" src="/logo.png" alt={BRAND.name} width="720" height="213" loading="lazy" />
           <p className="muted">{BRAND.tagline} Compra, vende y conecta con el agro panameño.</p>
-          <p className="ftr__social">
-            <a href={`https://instagram.com/${BRAND.instagram}`} target="_blank" rel="noopener">Instagram</a>
-            <a href={`https://facebook.com/${BRAND.facebook}`} target="_blank" rel="noopener">Facebook</a>
-            <a href={`https://tiktok.com/@${BRAND.tiktok}`} target="_blank" rel="noopener">TikTok</a>
+          <p className="ftr__social social">
+            <a href={`https://instagram.com/${BRAND.instagram}`} target="_blank" rel="noopener" className="social__btn social__btn--ig" aria-label="Instagram"><IcoInstagram /></a>
+            <a href={`https://facebook.com/${BRAND.facebook}`} target="_blank" rel="noopener" className="social__btn social__btn--fb" aria-label="Facebook"><IcoFacebook /></a>
+            <a href={`https://tiktok.com/@${BRAND.tiktok}`} target="_blank" rel="noopener" className="social__btn social__btn--tt" aria-label="TikTok"><IcoTikTok /></a>
           </p>
         </div>
         <div>
@@ -74,7 +75,7 @@ export function Footer() {
           <Link to="/precios">Precios del día</Link><Link to="/fincas">Directorio de fincas</Link>
           <Link to="/seguridad">Ayuda y compra segura</Link>
           <Link to="/privacidad">Términos y privacidad</Link>
-          <a href={waLink(BRAND.whatsapp, `Hola ${BRAND.name}`)} target="_blank" rel="noopener">Soporte por WhatsApp</a>
+          <a href={waLink(BRAND.whatsapp, `Hola ${BRAND.name}`)} target="_blank" rel="noopener" className="ftr__wa"><IcoWhatsApp size={18} /> Soporte por WhatsApp</a>
         </div>
       </div>
       <p className="wrap muted ftr__copy">© {new Date().getFullYear()} {BRAND.name}. Los anuncios son responsabilidad de quien los publica. Los precios publicados son de referencia.</p>

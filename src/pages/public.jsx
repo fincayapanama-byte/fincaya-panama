@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAsync } from '../lib/useAsync'
 import { BRAND, PROVINCES, money, slugify, waLink } from '../lib/config'
+import { IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, handle } from '../components/icons'
 import { AdSlot, Ago, FavButton, Grid, Loading, PriceTable, Seo, Verified, ListingCard } from '../components/ui'
 
 const provBySlug = (s) => PROVINCES.find((p) => slugify(p) === s)
@@ -71,7 +72,7 @@ export function Home() {
       <div className="wrap"><AdSlot placement="home_top" /></div>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Anuncios destacados</h2><Link to="/buscar">Ver directorio →</Link></div>
+        <div className="section__head"><h2>Anuncios destacados</h2><Link className="more" to="/buscar">Ver directorio <IcoArrow /></Link></div>
         <p className="muted small note">Los destacados tienen mayor visibilidad y se identifican con la etiqueta «Destacado».</p>
         <Grid items={featured.data} empty="Aún no hay anuncios destacados." />
       </section>
@@ -93,7 +94,7 @@ export function Home() {
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Precios de referencia</h2><Link to="/precios">Ver todos →</Link></div>
+        <div className="section__head"><h2>Precios de referencia</h2><Link className="more" to="/precios">Ver todos <IcoArrow /></Link></div>
         <PriceTable rows={prices.data} compact />
       </section>
 
@@ -253,11 +254,12 @@ export function ListingPage() {
           <div className="buybox__top">{l.featured ? <span className="tag tag--accent">Destacado</span> : <span />}<FavButton id={l.id} big /></div>
           <h1 className="buybox__title">{l.title}</h1>
           <p className="buybox__price">{money(l.price)} <span>/ {l.unit}</span></p>
-          <a className="btn btn--wa btn--block" href={waLink(f.whatsapp, text)} target="_blank" rel="noopener" onClick={contact}>Contactar por WhatsApp</a>
-          {f.phone && <a className="btn btn--ghost btn--block" href={`tel:${f.phone}`} onClick={contact}>Llamar</a>}
+          <a className="btn btn--wa btn--block" href={waLink(f.whatsapp, text)} target="_blank" rel="noopener" onClick={contact}><IcoWhatsApp size={22} /> Contactar por WhatsApp</a>
+          {f.phone && <a className="btn btn--ghost btn--block" href={`tel:${f.phone}`} onClick={contact}><IcoPhone /> Llamar</a>}
           <Link to={`/finca/${f.slug}`} className="farmmini">
             {f.logo_url ? <img className="farmmini__avatar" src={f.logo_url} alt="" /> : <span className="farmmini__avatar">{(f.name || '?').slice(0, 1)}</span>}
-            <span><strong>{f.name}</strong> {f.verified && <Verified />}<br /><span className="muted">{[f.district, f.province].filter(Boolean).join(', ')} · Ver finca →</span></span>
+            <span><strong>{f.name}</strong> {f.verified && <Verified />}<br /><span className="muted">{[f.district, f.province].filter(Boolean).join(', ')}</span></span>
+            <IcoChevron className="ico farmmini__go" />
           </Link>
           <div className="safety">
             <strong>Compra segura:</strong> visita la finca o paga contra entrega. Nunca envíes dinero por adelantado a quien no conoces. <Link to="/seguridad">Más consejos</Link>
@@ -305,15 +307,15 @@ export function FarmPage() {
           <Grid items={f.listings} empty="Esta finca no tiene anuncios activos." />
         </div>
         <aside className="buybox card">
-          <a className="btn btn--wa btn--block" href={waLink(f.whatsapp, `Hola ${f.name}, los vi en ${BRAND.name}.`)} target="_blank" rel="noopener">WhatsApp</a>
-          {f.phone && <a className="btn btn--ghost btn--block" href={`tel:${f.phone}`}>Llamar</a>}
-          <ul className="links">
-            {f.website && <li><a href={f.website} target="_blank" rel="noopener">Sitio web</a></li>}
-            {f.instagram && <li><a href={`https://instagram.com/${f.instagram}`} target="_blank" rel="noopener">Instagram @{f.instagram}</a></li>}
-            {f.tiktok && <li><a href={`https://tiktok.com/@${f.tiktok}`} target="_blank" rel="noopener">TikTok @{f.tiktok}</a></li>}
-            {f.facebook && <li><a href={`https://facebook.com/${f.facebook}`} target="_blank" rel="noopener">Facebook</a></li>}
-            {f.email && <li><a href={`mailto:${f.email}`}>{f.email}</a></li>}
-          </ul>
+          <a className="btn btn--wa btn--block" href={waLink(f.whatsapp, `Hola ${f.name}, los vi en ${BRAND.name}.`)} target="_blank" rel="noopener"><IcoWhatsApp size={22} /> WhatsApp</a>
+          {f.phone && <a className="btn btn--ghost btn--block" href={`tel:${f.phone}`}><IcoPhone /> Llamar</a>}
+          <div className="social">
+            {f.instagram && <a className="social__btn social__btn--ig" href={`https://instagram.com/${handle(f.instagram)}`} target="_blank" rel="noopener" aria-label="Instagram" title={`Instagram @${handle(f.instagram)}`}><IcoInstagram /></a>}
+            {f.facebook && <a className="social__btn social__btn--fb" href={`https://facebook.com/${handle(f.facebook)}`} target="_blank" rel="noopener" aria-label="Facebook" title="Facebook"><IcoFacebook /></a>}
+            {f.tiktok && <a className="social__btn social__btn--tt" href={`https://tiktok.com/@${handle(f.tiktok)}`} target="_blank" rel="noopener" aria-label="TikTok" title={`TikTok @${handle(f.tiktok)}`}><IcoTikTok /></a>}
+            {f.website && <a className="social__btn" href={f.website} target="_blank" rel="noopener" aria-label="Sitio web" title="Sitio web"><IcoGlobe /></a>}
+            {f.email && <a className="social__btn" href={`mailto:${f.email}`} aria-label="Correo" title={f.email}><IcoMail /></a>}
+          </div>
           {f.lat && <iframe title={`Mapa de ${f.name}`} className="map" loading="lazy" src={`https://www.google.com/maps?q=${f.lat},${f.lng}&z=13&output=embed`} />}
         </aside>
       </div>
