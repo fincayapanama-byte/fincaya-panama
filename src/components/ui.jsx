@@ -155,21 +155,22 @@ export function summarizePrices(rows) {
 }
 
 export function PriceTable({ rows, compact }) {
-  const list = summarizePrices(rows)
   if (!rows) return <Loading />
+  const list = rows.length && rows[0].values ? rows : summarizePrices(rows)
   if (!list.length) return <p className="empty">Aún no hay precios cargados.</p>
+  const range = (p) => p.price_min != null && p.price_max != null && Number(p.price_min) !== Number(p.price_max)
   return (
     <div className="table-wrap">
-      <table className="table">
+      <table className="table prices">
         <thead><tr><th>Producto</th><th>Precio</th><th>Variación</th>{!compact && <th>Tendencia</th>}<th>Fuente</th><th>Fecha</th></tr></thead>
         <tbody>
           {list.map((p) => (
-            <tr key={`${p.product_slug}${p.unit}${p.province}${p.source}`}>
-              <td><strong>{p.product_name}</strong><br /><span className="muted">{[p.province, p.market].filter(Boolean).join(' · ') || 'Nacional'}</span></td>
-              <td className="num">{money(p.price)}<br /><span className="muted">por {p.unit}</span></td>
+            <tr key={`${p.product_slug}${p.unit}${p.province}${p.market}${p.source}`}>
+              <td><strong>{p.product_name}</strong><br /><span className="muted">{[p.market || p.province, p.origin && `origen ${p.origin}`].filter(Boolean).join(' · ') || 'Nacional'}</span></td>
+              <td className="num">{money(p.price)}<br /><span className="muted">por {p.unit}</span>{range(p) && <><br /><span className="muted small">{money(p.price_min)} – {money(p.price_max)}</span></>}</td>
               <td className={`num ${p.change > 0 ? 'up' : p.change < 0 ? 'down' : ''}`}>{p.change > 0 ? '▲' : p.change < 0 ? '▼' : '='} {(Math.abs(p.change) * 100).toFixed(1)}%</td>
               {!compact && <td><Sparkline values={p.values} /></td>}
-              <td>{p.source}{p.is_reference && <><br /><span className="tag">Referencia</span></>}</td>
+              <td>{p.source_url ? <a href={p.source_url} target="_blank" rel="noopener">{p.source}</a> : p.source}{p.is_reference && <><br /><span className="tag">Referencia</span></>}</td>
               <td className="muted">{p.date}</td>
             </tr>
           ))}

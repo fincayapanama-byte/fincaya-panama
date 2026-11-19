@@ -40,7 +40,12 @@ export function Home() {
   const cats = useAsync(() => api.categories(), [])
   const featured = useAsync(() => api.listings({ featured: true, limit: 8 }), [])
   const recent = useAsync(() => api.listings({ limit: 8 }), [])
-  const prices = useAsync(() => api.prices({ days: 10 }), [])
+  const prices = useAsync(() => api.prices({ days: 10 }).then((all) => {
+    const FEATURED = ['name', 'yuca', 'otoe', 'platano', 'tomate', 'cebolla', 'papa', 'arroz', 'aji', 'zapallo', 'lechon', 'cerdo', 'ganado', 'novillo']
+    const own = all.filter((p) => p.source !== 'IMA')
+    const ima = all.filter((p) => p.source === 'IMA' && p.market === 'Merca Panamá' && FEATURED.some((f) => p.product_slug.startsWith(f)))
+    return [...own, ...ima].slice(0, 8)
+  }), [])
   const counts = useAsync(() => api.provinceCounts(), [])
   const roots = (cats.data || []).filter((c) => !c.parent_slug)
   return (
@@ -354,20 +359,34 @@ export function Farms() {
 // ================================ PRECIOS ================================
 export function Prices() {
   const [days, setDays] = useState(30)
-  const { data } = useAsync(() => api.prices({ days }), [days])
-  const [cat, setCat] = useState('')
-  const rows = useMemo(() => (data || []).filter((p) => !cat || p.product_name.toLowerCase().includes(cat)), [data, cat])
+  const markets = useAsync(() => api.priceMarkets({ days: 30 }), [])
+  const [market, setMarket] = useState(null)
+  const sel = market ?? (markets.data?.find((m) => m.market === 'Merca Panamá') ? 'Merca Panamá' : '')
+  const { data } = useAsync(() => (markets.loading ? Promise.resolve(null) : api.prices({ days, market: sel || null })), [days, sel, markets.loading])
+  const [q, setQ] = useState('')
+  const norm = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const rows = useMemo(() => (data || []).filter((p) => !q || norm(p.product_name).includes(norm(q))), [data, q])
+  const last = (data || []).reduce((m, p) => (p.date > m ? p.date : m), '')
   return (
     <div className="wrap section">
-      <Seo title="Precios agropecuarios del día en Panamá" description="Precios de referencia de lechones, cerdo en pie, ganado, ñame, yuca y más en Panamá, con fuente y fecha." />
+      <Seo title="Precios agropecuarios del día en Panamá" description="Precios diarios de Merca Panamá, Mercado de San Felipe y otros mercados de Panamá (fuente IMA), más precios de lechones, ganado y productos del campo." />
       <h1 className="h1">Precios del día</h1>
-      <p className="lead">Cada precio muestra su fuente y su fecha. Los marcados como <span className="tag">Referencia</span> se calculan con la mediana de los anuncios publicados y no son precios oficiales.</p>
+      <p className="lead">Precios mayoristas oficiales del <a href="https://sipan.ima.gob.pa" target="_blank" rel="noopener">IMA (SIPAN)</a>, actualizados cada mañana, y precios reportados por productores. Los marcados como <span className="tag">Referencia</span> se calculan con los anuncios publicados y no son oficiales.</p>
+      {markets.data?.length > 0 && (
+        <div className="chips" role="tablist">
+          {markets.data.map((m) => (
+            <button key={m.market} role="tab" aria-selected={sel === m.market} className={`chip ${sel === m.market ? 'is-on' : ''}`} onClick={() => setMarket(m.market)}>{m.market}</button>
+          ))}
+          <button role="tab" aria-selected={sel === ''} className={`chip ${sel === '' ? 'is-on' : ''}`} onClick={() => setMarket('')}>Todos</button>
+        </div>
+      )}
       <div className="toolbar">
-        <input placeholder="Filtrar producto (ej. ñame)" value={cat} onChange={(e) => setCat(e.target.value.toLowerCase())} />
+        <input placeholder="Buscar producto (ej. ñame, tomate, yuca)" value={q} onChange={(e) => setQ(e.target.value)} />
         <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
           <option value={7}>Últimos 7 días</option><option value={30}>Últimos 30 días</option><option value={90}>Últimos 90 días</option>
         </select>
       </div>
+      {data && <p className="muted small">{rows.length} productos{last && ` · actualizado al ${last}`}</p>}
       <PriceTable rows={data ? rows : null} />
       <p className="muted small">¿Eres productor y conoces el precio de hoy en tu zona? <Link to="/panel/precio">Repórtalo desde tu panel</Link>.</p>
       <AdSlot placement="precios" />

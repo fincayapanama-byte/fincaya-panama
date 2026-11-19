@@ -62,6 +62,19 @@ export async function toJpeg(file, max = 1600, quality = 0.85) {
   } catch { return file }
 }
 
+function summarizePrices(rows) {
+  const by = {}
+  for (const p of rows || []) {
+    const k = `${p.product_slug}|${p.unit}|${p.province || ''}|${p.market || ''}|${p.source}`
+    ;(by[k] ||= []).push(p)
+  }
+  return Object.values(by).map((g) => {
+    const s = g.sort((a, b) => a.date.localeCompare(b.date))
+    const last = s.at(-1), prev = s.at(-2)
+    return { ...last, values: s.map((x) => Number(x.price)), change: prev ? (last.price - prev.price) / prev.price : 0 }
+  }).sort((a, b) => a.product_name.localeCompare(b.product_name))
+}
+
 export const api = {
   // ---------------- Auth ----------------
   async currentUser() {
@@ -145,10 +158,24 @@ export const api = {
     if (province) qb = qb.eq('province', province)
     return ok(await qb)
   },
-  async prices({ days = 30 } = {}) {
+  // Devuelve un resumen por producto: último precio, variación y serie para la tendencia
+  async prices({ days = 30, market = null } = {}) {
     const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
-    if (DEMO) return load().prices.filter((p) => p.approved && p.date >= since)
-    return ok(await supabase.from('prices').select('*').eq('approved', true).gte('date', since).order('date'))
+    if (DEMO) return summarizePrices(load().prices.filter((p) => p.approved && p.date >= since && (!market || p.market === market)))
+    const rows = ok(await supabase.rpc('prices_summary', { p_days: days, p_market: market }))
+    return (rows || []).map((r) => ({
+      ...r,
+      values: (r.series || []).map(Number),
+      change: r.prev_price ? (Number(r.price) - Number(r.prev_price)) / Number(r.prev_price) : 0,
+    }))
+  },
+  async priceMarkets({ days = 30 } = {}) {
+    if (DEMO) {
+      const by = {}
+      for (const p of load().prices) if (p.market) by[p.market] = (by[p.market] || 0) + 1
+      return Object.entries(by).map(([market, n]) => ({ market, n })).sort((a, b) => b.n - a.n)
+    }
+    return ok(await supabase.rpc('price_markets', { p_days: days })) || []
   },
   async ads(placement) {
     if (DEMO) return load().ad_slots.filter((a) => a.active && a.placement === placement)
@@ -350,6 +377,16 @@ export const api = {
     async publishNow(listingId, socialImage) {
       if (DEMO) { load().social_posts.filter((p) => p.listing_id === listingId).forEach((p) => { p.status = 'publicado'; p.permalink = '#' }); save(); return }
       ok(await supabase.functions.invoke('publish-social', { body: { listing_id: listingId, image_url: socialImage } }))
+    },
+    async syncIma(days = 2) {
+      if (DEMO) return { ok: true, days, upserted: 0, detail: { demo: 'En modo demo no se consulta el IMA' } }
+      const { data, error } = await supabase.functions.invoke('sync-precios-ima', { body: { days } })
+      if (error) throw error
+      return data
+    },
+    async syncLog() {
+      if (DEMO) return []
+      return ok(await supabase.from('price_sync_log').select('*').order('ran_at', { ascending: false }).limit(5))
     },
     async brandPosts() {
       if (DEMO) return load().brand_posts || []

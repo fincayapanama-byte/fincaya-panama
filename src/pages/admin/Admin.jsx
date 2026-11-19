@@ -159,6 +159,7 @@ function Prices() {
   const pending = (data || []).filter((p) => !p.approved)
   return (
     <>
+      <ImaSync onDone={reload} />
       <div className="card form-card">
         <p className="filters__h">Cargar precio</p>
         <form className="form form--3" onSubmit={async (e) => {
@@ -186,6 +187,36 @@ function Prices() {
     </>
   )
 }
+function ImaSync({ onDone }) {
+  const log = useAsync(() => api.admin.syncLog(), [])
+  const [days, setDays] = useState(2)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const run = async () => {
+    setBusy(true); setMsg('')
+    try {
+      const r = await api.admin.syncIma(days)
+      setMsg(r.ok ? `✅ ${r.upserted} precios actualizados (${r.days} días).` : `Error: ${r.error}`)
+      log.reload(); onDone?.()
+    } catch (e) { setMsg(`Error: ${e.message || e}`) } finally { setBusy(false) }
+  }
+  const last = log.data?.[0]
+  return (
+    <div className="card form-card">
+      <p className="filters__h">Precios oficiales del IMA (SIPAN)</p>
+      <p className="muted small">Se actualizan solos todos los días a las 7:15 a. m. y 12:15 p. m. (Merca Panamá, San Felipe, Marisco y mercados regionales cuando publican).
+        {last && <> Última sincronización: <strong>{new Date(last.ran_at).toLocaleString('es-PA')}</strong> · {last.upserted} precios.</>}</p>
+      <div className="toolbar">
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} disabled={busy}>
+          <option value={2}>Hoy y ayer</option><option value={7}>Últimos 7 días</option><option value={30}>Últimos 30 días</option><option value={45}>Últimos 45 días (historial)</option>
+        </select>
+        <button className="btn btn--fill" onClick={run} disabled={busy}>{busy ? 'Sincronizando… (hasta 1 min)' : 'Sincronizar ahora'}</button>
+      </div>
+      {msg && <p className="notice">{msg}</p>}
+    </div>
+  )
+}
+
 const PriceRows = ({ rows, reload, approve }) => (
   <div className="table-wrap"><table className="table">
     <thead><tr><th>Fecha</th><th>Producto</th><th>Precio</th><th>Fuente</th><th></th></tr></thead>
