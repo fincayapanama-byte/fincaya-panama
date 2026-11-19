@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BRAND } from '../../lib/config'
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -21,7 +22,8 @@ export default function Admin() {
         <NavLink to="/admin/usuarios">Usuarios</NavLink>
         <NavLink to="/admin/fincas">Fincas</NavLink>
         <NavLink to="/admin/precios">Precios</NavLink>
-        <NavLink to="/admin/redes">Redes</NavLink>
+        <NavLink to="/admin/marca">Publicar en redes</NavLink>
+        <NavLink to="/admin/redes">Cola de anuncios</NavLink>
         <NavLink to="/admin/comentarios">Comentarios</NavLink>
         <NavLink to="/admin/publicidad">Publicidad</NavLink>
         <NavLink to="/admin/reportes">Reportes</NavLink>
@@ -32,6 +34,7 @@ export default function Admin() {
         <Route path="usuarios" element={<Users />} />
         <Route path="fincas" element={<Farms />} />
         <Route path="precios" element={<Prices />} />
+        <Route path="marca" element={<BrandPosts />} />
         <Route path="redes" element={<Social />} />
         <Route path="comentarios" element={<Comments />} />
         <Route path="publicidad" element={<Ads />} />
@@ -202,6 +205,114 @@ function Social() {
           </tr>
         ))}</tbody>
       </table></div>
+    </>
+  )
+}
+
+const SITE = BRAND.url
+const TEMPLATES = [
+  { name: 'Bienvenida', text: `🌾 ¡Bienvenidos a FincaYa Panamá!
+
+El nuevo punto de encuentro del agro panameño: compra, vende y conecta con productores de todo el país.
+
+🐄 Ganadería · 🐖 Porcicultura · 🐓 Avicultura · 🌱 Agricultura · 🚜 Maquinaria · 🩺 Servicios
+
+Busca por provincia y contacta directo al productor por WhatsApp, sin intermediarios.
+
+👉 ${SITE}
+
+#FincaYaPanamá #AgroPanamá #ProductoresPanameños #DirectorioAgropecuario` },
+  { name: 'Convocatoria de productores', text: `📢 ¿Tienes una finca o produces en el campo panameño?
+
+Publica tu anuncio en FincaYa Panamá y conecta con compradores de todo el país.
+
+✅ Gratis durante el lanzamiento
+✅ Tu perfil de finca con fotos, ubicación y WhatsApp
+✅ Tus anuncios también se comparten en nuestras redes
+
+Regístrate en 5 minutos 👉 ${SITE}/publicar
+
+#FincaYaPanamá #ProductoresPanameños #AgroPanamá` },
+  { name: 'Cómo publicar', text: `📲 Publicar en FincaYa Panamá es así de fácil:
+
+1️⃣ Crea tu cuenta con tu correo y WhatsApp
+2️⃣ Registra tu finca o negocio
+3️⃣ Sube fotos reales, precio y cantidad
+4️⃣ Recibe a los compradores directo en tu WhatsApp
+
+Revisamos cada anuncio para que la plataforma sea confiable.
+
+👉 ${SITE}/publicar
+
+#FincaYaPanamá #AgroPanamá` },
+  { name: 'Compra segura', text: `🛡️ Consejos para comprar seguro en el agro:
+
+• Visita la finca o pide videollamada antes de pagar
+• No envíes adelantos a quien no conoces
+• Pide registro de vacunas y guía de movilización
+• Compara con los precios de referencia en ${SITE}/precios
+
+¿Ves algo sospechoso? Usa «Reportar anuncio».
+
+#FincaYaPanamá #CompraSegura #AgroPanamá` },
+]
+
+function BrandPosts() {
+  const { user } = useAuth()
+  const hist = useAsync(() => api.admin.brandPosts(), [])
+  const [text, setText] = useState(TEMPLATES[0].text)
+  const [img, setImg] = useState('')
+  const [nets, setNets] = useState({ facebook: true, instagram: true })
+  const [busy, setBusy] = useState(false)
+  const [up, setUp] = useState(false)
+  const [res, setRes] = useState(null)
+  const networks = Object.keys(nets).filter((k) => nets[k])
+  const upload = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return
+    setUp(true); try { setImg(await api.uploadImage(user, f)) } finally { setUp(false); e.target.value = '' }
+  }
+  const publish = async () => {
+    if (!confirm(`Se publicará ahora en: ${networks.join(' y ')}. ¿Continuar?`)) return
+    setBusy(true); setRes(null)
+    try { setRes((await api.admin.publishBrand({ message: text, image_url: img || null, networks })).results) ; hist.reload() }
+    catch (err) { setRes({ error: err.message || String(err) }) } finally { setBusy(false) }
+  }
+  return (
+    <>
+      <p className="muted">Publica en el Facebook e Instagram de {BRAND.name}: bienvenidas, convocatorias, consejos. Instagram requiere imagen (se convierte a JPG automáticamente; ideal 1080×1350).</p>
+      <div className="chips">{TEMPLATES.map((t) => <button key={t.name} className="chip" onClick={() => setText(t.text)}>{t.name}</button>)}</div>
+      <div className="brand-grid">
+        <div className="card form-card form">
+          <Field label={`Texto (${text.length}/2200)`}><textarea rows="14" maxLength={2200} value={text} onChange={(e) => setText(e.target.value)} /></Field>
+          <Field label="Imagen" hint="Fotos reales del agro o piezas hechas en Canva."><input type="file" accept="image/*" onChange={upload} disabled={up} /></Field>
+          <div className="chips">
+            {['facebook', 'instagram'].map((n) => (
+              <label key={n} className="check"><input type="checkbox" checked={nets[n]} onChange={(e) => setNets({ ...nets, [n]: e.target.checked })} /> {n === 'facebook' ? 'Facebook' : 'Instagram'}</label>
+            ))}
+          </div>
+          <button className="btn btn--fill" disabled={busy || up || !text.trim() || !networks.length} onClick={publish}>{busy ? 'Publicando…' : up ? 'Subiendo imagen…' : 'Publicar ahora'}</button>
+          {res && <div className="notice">{Object.entries(res).map(([k, v]) => <p key={k} style={{ margin: 0 }}><strong>{k}:</strong> {String(v)}</p>)}</div>}
+        </div>
+        <div className="card preview">
+          <p className="muted small">Vista previa</p>
+          <div className="preview__head"><img src="/apple-touch-icon.png" alt="" width="36" height="36" /><strong>{BRAND.name}</strong></div>
+          {img ? <img className="preview__img" src={img} alt="" /> : <div className="preview__img preview__img--empty">Sin imagen</div>}
+          <p className="preview__text">{text}</p>
+        </div>
+      </div>
+      <h2 className="h2">Historial</h2>
+      {!hist.data ? <Loading /> : !hist.data.length ? <p className="empty">Aún no hay publicaciones de marca.</p> : (
+        <div className="table-wrap"><table className="table">
+          <thead><tr><th>Publicación</th><th>Redes</th><th>Resultado</th></tr></thead>
+          <tbody>{hist.data.map((b) => (
+            <tr key={b.id}>
+              <td><span className="clamp">{b.message}</span><br /><Ago iso={b.created_at} /></td>
+              <td>{(b.networks || []).map((n) => <span key={n} className={`net net--${n}`} style={{ marginRight: 4 }}>{n}</span>)}</td>
+              <td className="small">{Object.entries(b.results || {}).map(([k, v]) => <div key={k}>{k}: {String(v).startsWith('publicado') ? '✅ ' : '⚠️ '}{String(v).replace(/^publicado ?/, '')}</div>)}</td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+      )}
     </>
   )
 }

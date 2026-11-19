@@ -48,6 +48,20 @@ const childSlugs = async (cat) => {
   return kids.length ? [cat, ...kids] : [cat]
 }
 
+
+// Convierte cualquier foto a JPG (máx. 1600 px). Instagram solo acepta JPG y así las fotos pesan menos.
+export async function toJpeg(file, max = 1600, quality = 0.85) {
+  try {
+    const bmp = await createImageBitmap(file)
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
+    const c = document.createElement('canvas')
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale)
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height)
+    ctx.drawImage(bmp, 0, 0, c.width, c.height)
+    return await new Promise((res) => c.toBlob((b) => res(b || file), 'image/jpeg', quality))
+  } catch { return file }
+}
+
 export const api = {
   // ---------------- Auth ----------------
   async currentUser() {
@@ -198,9 +212,10 @@ export const api = {
     return ok(await supabase.from('listings').select(SEL).eq('owner_id', user.id).order('created_at', { ascending: false }))
   },
   async uploadImage(user, file) {
-    if (DEMO) return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(file) })
-    const path = `${user.id}/${Date.now()}-${slugify(file.name)}`
-    ok(await supabase.storage.from('fotos').upload(path, file, { cacheControl: '31536000' }))
+    const jpg = await toJpeg(file)
+    if (DEMO) return new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(jpg) })
+    const path = `${user.id}/${Date.now()}-${slugify(file.name.replace(/\.[^.]+$/, ''))}.jpg`
+    ok(await supabase.storage.from('fotos').upload(path, jpg, { cacheControl: '31536000', contentType: 'image/jpeg' }))
     return supabase.storage.from('fotos').getPublicUrl(path).data.publicUrl
   },
   async createListing(user, farm, l) {
@@ -335,6 +350,21 @@ export const api = {
     async publishNow(listingId) {
       if (DEMO) { load().social_posts.filter((p) => p.listing_id === listingId).forEach((p) => { p.status = 'publicado'; p.permalink = '#' }); save(); return }
       ok(await supabase.functions.invoke('publish-social', { body: { listing_id: listingId } }))
+    },
+    async brandPosts() {
+      if (DEMO) return load().brand_posts || []
+      return ok(await supabase.from('brand_posts').select('*').order('created_at', { ascending: false }).limit(50))
+    },
+    async publishBrand({ message, image_url, networks }) {
+      if (DEMO) {
+        const db = load(); db.brand_posts = db.brand_posts || []
+        const results = Object.fromEntries(networks.map((n) => [n, n === 'instagram' && !image_url ? 'error: Instagram requiere una imagen' : 'publicado (demo)']))
+        db.brand_posts.unshift({ id: uid('b'), message, image_url, networks, results, created_at: new Date().toISOString() }); save()
+        return { ok: true, results }
+      }
+      const { data, error } = await supabase.functions.invoke('publish-social', { body: { brand: { message, image_url, networks } } })
+      if (error) throw error
+      return data
     },
     async comments() {
       if (DEMO) { const db = load(); return db.comments.map((c) => ({ ...c, listing: db.listings.find((l) => l.id === c.listing_id) })) }

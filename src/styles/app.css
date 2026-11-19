@@ -303,3 +303,13 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--green-2); o
   .provs { grid-template-columns: 1fr 1fr; }
   .trust { padding: 20px; }
 }
+
+/* Publicaciones de marca */
+.brand-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+.preview { padding: 16px; position: sticky; top: 84px; }
+.preview__head { display: flex; align-items: center; gap: 8px; margin: 6px 0 10px; }
+.preview__head img { border-radius: 50%; }
+.preview__img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: var(--radius-md); display: block; }
+.preview__img--empty { display: grid; place-items: center; background: #eee9d8; color: var(--muted); }
+.preview__text { white-space: pre-line; font-size: 14px; margin-top: 10px; }
+@media (max-width: 960px) { .brand-grid { grid-template-columns: 1fr; } .preview { position: static; } }

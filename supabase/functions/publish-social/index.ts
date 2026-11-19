@@ -1,13 +1,16 @@
 // Supabase Edge Function: publica un anuncio aprobado en la página de Facebook y el Instagram de la plataforma.
-// Secrets necesarios (supabase secrets set ...):
-//   META_PAGE_ID, META_PAGE_TOKEN (token de página de larga duración), META_IG_USER_ID, SITE_URL
-//   SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY vienen por defecto en Edge Functions.
+// Solo la puede llamar un usuario con rol admin (se valida su sesión).
+// Secrets: META_PAGE_ID, META_PAGE_TOKEN, META_IG_USER_ID, SITE_URL (opcional INDEXNOW_KEY)
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const GRAPH = 'https://graph.facebook.com/v23.0'
 const env = (k: string) => Deno.env.get(k) ?? ''
 const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'))
-
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+const json = (b: unknown, status = 200) => Response.json(b, { status, headers: cors })
 const money = (n: number | null) => (n == null ? 'Consultar' : `B/. ${Number(n).toFixed(2)}`)
 
 async function graph(path: string, params: Record<string, string>) {
@@ -19,21 +22,67 @@ async function graph(path: string, params: Record<string, string>) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
-    const { listing_id } = await req.json()
+    // Solo admins
+    const jwt = (req.headers.get('Authorization') || '').replace('Bearer ', '')
+    const { data: auth } = await db.auth.getUser(jwt)
+    if (!auth?.user) return json({ ok: false, error: 'sin sesión' }, 401)
+    const { data: prof } = await db.from('profiles').select('role').eq('id', auth.user.id).single()
+    if (prof?.role !== 'admin') return json({ ok: false, error: 'solo admin' }, 403)
+
+    const body = await req.json()
+
+    // ---------- Publicación de marca (bienvenida, convocatorias, consejos) ----------
+    if (body.brand) {
+      const { message, image_url, networks = ['facebook', 'instagram'] } = body.brand
+      if (!message) return json({ ok: false, error: 'falta el texto' }, 400)
+      const results: Record<string, string> = {}
+      if (networks.includes('facebook')) {
+        try {
+          const fb = image_url
+            ? await graph(`${env('META_PAGE_ID')}/photos`, { url: image_url, caption: message })
+            : await graph(`${env('META_PAGE_ID')}/feed`, { message, link: env('SITE_URL') })
+          results.facebook = `publicado https://facebook.com/${fb.post_id || fb.id}`
+        } catch (e) { results.facebook = `error: ${String(e)}` }
+      }
+      if (networks.includes('instagram')) {
+        if (!image_url) results.instagram = 'error: Instagram requiere una imagen'
+        else {
+          try {
+            const c = await graph(`${env('META_IG_USER_ID')}/media`, { image_url, caption: message })
+            for (let i = 0; i < 10; i++) {
+              const s = await (await fetch(`${GRAPH}/${c.id}?fields=status_code&access_token=${env('META_PAGE_TOKEN')}`)).json()
+              if (s.status_code === 'FINISHED') break
+              if (s.status_code === 'ERROR') throw new Error('Instagram no pudo procesar la imagen (usa JPG)')
+              await new Promise((r) => setTimeout(r, 1500))
+            }
+            const pub = await graph(`${env('META_IG_USER_ID')}/media_publish`, { creation_id: c.id })
+            const pl = await (await fetch(`${GRAPH}/${pub.id}?fields=permalink&access_token=${env('META_PAGE_TOKEN')}`)).json()
+            results.instagram = `publicado ${pl.permalink || ''}`.trim()
+          } catch (e) { results.instagram = `error: ${String(e)}` }
+        }
+      }
+      await db.from('brand_posts').insert({ message, image_url, networks, results, created_by: auth.user.id })
+      return json({ ok: true, results })
+    }
+
+    // ---------- Publicación de un anuncio aprobado ----------
+    const { listing_id } = body
     const { data: l, error } = await db.from('listings').select('*, farm:farms(*), category:categories(name)').eq('id', listing_id).single()
-    if (error || !l || l.status !== 'aprobado') return Response.json({ ok: false, reason: 'anuncio no aprobado' }, { status: 400 })
+    if (error || !l || l.status !== 'aprobado') return json({ ok: false, error: 'anuncio no aprobado' }, 400)
 
     const url = `${env('SITE_URL')}/anuncio/${l.slug}`
     const ig = l.farm?.instagram ? ` @${l.farm.instagram}` : ''
+    const tag = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]/g, '')
     const caption = [
       `🌾 ${l.title}`,
       `💲 ${money(l.price)} por ${l.unit}${l.quantity ? ` · ${l.quantity} disponibles` : ''}`,
       `📍 ${[l.district, l.province].filter(Boolean).join(', ')}`,
       `🏡 ${l.farm?.name}${ig}`,
       l.description ? `\n${String(l.description).slice(0, 600)}` : '',
-      `\n📲 WhatsApp directo al productor: ${url}`,
-      `#Panamá #${(l.province || '').replace(/\s+/g, '')} #AgroPanamá #${(l.category?.name || '').replace(/\s+/g, '')}`,
+      `\n📲 Contacta directo al productor: ${url}`,
+      `\n#FincaYaPanamá #AgroPanamá #ProductoresPanameños #${tag(l.province)} #${tag(l.category?.name)}`,
     ].join('\n')
     const image = l.images?.[0]
     const results: Record<string, unknown> = {}
@@ -44,30 +93,39 @@ Deno.serve(async (req) => {
         ? await graph(`${env('META_PAGE_ID')}/photos`, { url: image, caption })
         : await graph(`${env('META_PAGE_ID')}/feed`, { message: caption, link: url })
       const id = fb.post_id || fb.id
-      await db.from('social_posts').upsert({ listing_id, network: 'facebook', status: 'publicado', external_id: id, permalink: `https://facebook.com/${id}` }, { onConflict: 'listing_id,network' })
-      results.facebook = id
+      await db.from('social_posts').upsert({ listing_id, network: 'facebook', status: 'publicado', external_id: id, permalink: `https://facebook.com/${id}`, error: null }, { onConflict: 'listing_id,network' })
+      results.facebook = 'publicado'
     } catch (e) {
       await db.from('social_posts').upsert({ listing_id, network: 'facebook', status: 'error', error: String(e) }, { onConflict: 'listing_id,network' })
+      results.facebook = String(e)
     }
 
-    // Instagram (requiere imagen pública JPG)
+    // Instagram (requiere imagen JPG pública)
     if (image && env('META_IG_USER_ID')) {
       try {
         const container = await graph(`${env('META_IG_USER_ID')}/media`, { image_url: image, caption })
+        // Esperar a que Instagram procese la imagen
+        for (let i = 0; i < 10; i++) {
+          const s = await (await fetch(`${GRAPH}/${container.id}?fields=status_code&access_token=${env('META_PAGE_TOKEN')}`)).json()
+          if (s.status_code === 'FINISHED') break
+          if (s.status_code === 'ERROR') throw new Error('Instagram no pudo procesar la imagen')
+          await new Promise((r) => setTimeout(r, 1500))
+        }
         const pub = await graph(`${env('META_IG_USER_ID')}/media_publish`, { creation_id: container.id })
-        await db.from('social_posts').upsert({ listing_id, network: 'instagram', status: 'publicado', external_id: pub.id }, { onConflict: 'listing_id,network' })
-        results.instagram = pub.id
+        const pl = await (await fetch(`${GRAPH}/${pub.id}?fields=permalink&access_token=${env('META_PAGE_TOKEN')}`)).json()
+        await db.from('social_posts').upsert({ listing_id, network: 'instagram', status: 'publicado', external_id: pub.id, permalink: pl.permalink || null, error: null }, { onConflict: 'listing_id,network' })
+        results.instagram = 'publicado'
       } catch (e) {
         await db.from('social_posts').upsert({ listing_id, network: 'instagram', status: 'error', error: String(e) }, { onConflict: 'listing_id,network' })
+        results.instagram = String(e)
       }
+    } else {
+      results.instagram = 'sin foto: Instagram requiere imagen'
     }
 
-    // Avisar a Bing (IndexNow) del anuncio nuevo
-    if (env('INDEXNOW_KEY')) {
-      fetch(`https://api.indexnow.org/indexnow?url=${encodeURIComponent(url)}&key=${env('INDEXNOW_KEY')}`).catch(() => {})
-    }
-    return Response.json({ ok: true, results })
+    if (env('INDEXNOW_KEY')) fetch(`https://api.indexnow.org/indexnow?url=${encodeURIComponent(url)}&key=${env('INDEXNOW_KEY')}`).catch(() => {})
+    return json({ ok: true, results })
   } catch (e) {
-    return Response.json({ ok: false, error: String(e) }, { status: 500 })
+    return json({ ok: false, error: String(e) }, 500)
   }
 })
