@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    {
+      "source": "/(anuncio|finca)/:slug",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*" }],
+      "destination": "/api/seo?path=/$1/:slug"
+    },
+    { "source": "/((?!api/|assets/|demo/|favicon).*)", "destination": "/index.html" }
+  ]
+}

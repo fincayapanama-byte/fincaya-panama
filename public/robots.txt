@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /panel
+Disallow: /admin
+
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+
+Sitemap: https://fincayapanama.com/sitemap.xml

@@ -1,0 +1,276 @@
+import { useState } from 'react'
+import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import { api } from '../../lib/api'
+import { useAuth } from '../../lib/auth'
+import { useAsync } from '../../lib/useAsync'
+import { AD_PLACEMENTS, PROVINCES, UNITS, money } from '../../lib/config'
+import { Ago, Field, Loading, Seo } from '../../components/ui'
+
+export default function Admin() {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="wrap section"><Loading /></div>
+  if (!user) return <Navigate to="/entrar" replace />
+  if (user.role !== 'admin') return <div className="wrap section narrow"><h1 className="h1">Sin acceso</h1><p>Esta sección es solo para administradores.</p></div>
+  return (
+    <div className="wrap section">
+      <Seo title="Administración" />
+      <div className="panel-head"><h1 className="h1">Administración</h1><button className="btn btn--ghost btn--sm" onClick={() => api.signOut()}>Salir</button></div>
+      <nav className="subnav">
+        <NavLink end to="/admin">Resumen</NavLink>
+        <NavLink to="/admin/anuncios">Anuncios</NavLink>
+        <NavLink to="/admin/usuarios">Usuarios</NavLink>
+        <NavLink to="/admin/fincas">Fincas</NavLink>
+        <NavLink to="/admin/precios">Precios</NavLink>
+        <NavLink to="/admin/redes">Redes</NavLink>
+        <NavLink to="/admin/comentarios">Comentarios</NavLink>
+        <NavLink to="/admin/publicidad">Publicidad</NavLink>
+        <NavLink to="/admin/reportes">Reportes</NavLink>
+      </nav>
+      <Routes>
+        <Route index element={<Overview />} />
+        <Route path="anuncios" element={<Listings />} />
+        <Route path="usuarios" element={<Users />} />
+        <Route path="fincas" element={<Farms />} />
+        <Route path="precios" element={<Prices />} />
+        <Route path="redes" element={<Social />} />
+        <Route path="comentarios" element={<Comments />} />
+        <Route path="publicidad" element={<Ads />} />
+        <Route path="reportes" element={<Reports />} />
+      </Routes>
+    </div>
+  )
+}
+
+function Overview() {
+  const { data: s } = useAsync(() => api.admin.stats(), [])
+  if (!s) return <Loading />
+  const K = ({ label, value, to, warn }) => (
+    <Link to={to || '#'} className={`kpi ${warn ? 'kpi--warn' : ''}`}><span>{label}</span><strong>{value}</strong></Link>
+  )
+  return (
+    <>
+      <div className="kpis kpis--4">
+        <K label="Usuarios" value={s.users} to="/admin/usuarios" />
+        <K label="Fincas (verificadas)" value={`${s.farms} (${s.verified})`} to="/admin/fincas" />
+        <K label="Anuncios publicados" value={s.approved} to="/admin/anuncios" />
+        <K label="Pendientes de revisión" value={s.pending} to="/admin/anuncios" warn={s.pending > 0} />
+        <K label="Visitas a anuncios" value={s.views} />
+        <K label="Contactos por WhatsApp" value={s.contacts} />
+        <K label="Posts en redes" value={s.posts} to="/admin/redes" />
+        <K label="Comentarios sin responder" value={`${s.unanswered} de ${s.comments}`} to="/admin/comentarios" warn={s.unanswered > 0} />
+        <K label="Reportes abiertos" value={s.reports} to="/admin/reportes" warn={s.reports > 0} />
+      </div>
+      <p className="muted small">Contactos = clics en WhatsApp o Llamar desde un anuncio. Es la métrica que demuestra al productor que la plataforma le trae clientes.</p>
+    </>
+  )
+}
+
+const ST = ['pendiente', 'aprobado', 'rechazado', 'vendido', 'vencido']
+function Listings() {
+  const [status, setStatus] = useState('pendiente')
+  const { data, reload } = useAsync(() => api.admin.listings(status), [status])
+  const act = async (l, patch) => { await api.admin.setListing(l.id, patch); reload() }
+  return (
+    <>
+      <div className="chips">{ST.map((s) => <button key={s} className={`chip ${status === s ? 'is-on' : ''}`} onClick={() => setStatus(s)}>{s}</button>)}</div>
+      {!data ? <Loading /> : !data.length ? <p className="empty">No hay anuncios en "{status}".</p> : (
+        <div className="table-wrap"><table className="table">
+          <thead><tr><th></th><th>Anuncio</th><th>Finca</th><th>Precio</th><th>Métricas</th><th>Acciones</th></tr></thead>
+          <tbody>{data.map((l) => (
+            <tr key={l.id}>
+              <td><div className="mini" style={l.images?.[0] ? { backgroundImage: `url(${l.images[0]})` } : undefined} /></td>
+              <td><Link to={`/anuncio/${l.slug}`}>{l.title}</Link><br /><span className="muted small">{l.category?.name} · {l.province} · <Ago iso={l.created_at} /></span><br /><span className="muted small clamp">{l.description}</span></td>
+              <td>{l.farm?.name}{l.farm?.verified ? ' ✔' : ''}</td>
+              <td className="num">{money(l.price)}<br /><span className="muted">/{l.unit}</span></td>
+              <td className="num small">{l.views} visitas<br />{l.contacts} contactos</td>
+              <td className="actions">
+                {l.status !== 'aprobado' && <button className="btn btn--fill btn--xs" onClick={() => act(l, { status: 'aprobado', reject_reason: null })}>Aprobar y publicar</button>}
+                {l.status !== 'rechazado' && <button className="btn btn--ghost btn--xs" onClick={() => { const r = prompt('Motivo del rechazo (lo verá el productor):'); if (r) act(l, { status: 'rechazado', reject_reason: r }) }}>Rechazar</button>}
+                <button className="btn btn--ghost btn--xs" onClick={() => act(l, { featured: !l.featured })}>{l.featured ? 'Quitar destacado' : 'Destacar'}</button>
+              </td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+      )}
+    </>
+  )
+}
+
+function Users() {
+  const { data, reload } = useAsync(() => api.admin.users(), [])
+  if (!data) return <Loading />
+  return (
+    <div className="table-wrap"><table className="table">
+      <thead><tr><th>Usuario</th><th>Rol</th><th>Alta</th><th>Acciones</th></tr></thead>
+      <tbody>{data.map((u) => (
+        <tr key={u.id}>
+          <td><strong>{u.full_name || '—'}</strong><br /><span className="muted small">{u.email || u.id} {u.whatsapp ? `· ${u.whatsapp}` : ''}</span></td>
+          <td><select value={u.role} onChange={(e) => api.admin.setUser(u.id, { role: e.target.value }).then(reload)}><option>productor</option><option>admin</option></select></td>
+          <td><Ago iso={u.created_at} /></td>
+          <td><button className={`btn btn--xs ${u.blocked ? 'btn--fill' : 'btn--ghost'}`} onClick={() => api.admin.setUser(u.id, { blocked: !u.blocked }).then(reload)}>{u.blocked ? 'Desbloquear' : 'Bloquear'}</button></td>
+        </tr>
+      ))}</tbody>
+    </table></div>
+  )
+}
+
+function Farms() {
+  const { data, reload } = useAsync(() => api.admin.farms(), [])
+  if (!data) return <Loading />
+  return (
+    <div className="table-wrap"><table className="table">
+      <thead><tr><th>Finca</th><th>Ubicación</th><th>Contacto</th><th>Verificación</th></tr></thead>
+      <tbody>{data.map((f) => (
+        <tr key={f.id}>
+          <td><Link to={`/finca/${f.slug}`}>{f.name}</Link></td>
+          <td>{[f.district, f.province].filter(Boolean).join(', ')}</td>
+          <td className="small">{f.whatsapp}<br />{f.email}</td>
+          <td><button className={`btn btn--xs ${f.verified ? 'btn--fill' : 'btn--ghost'}`} onClick={() => api.admin.setFarm(f.id, { verified: !f.verified }).then(reload)}>{f.verified ? '✔ Verificada' : 'Marcar verificada'}</button></td>
+        </tr>
+      ))}</tbody>
+    </table></div>
+  )
+}
+
+function Prices() {
+  const { data, reload } = useAsync(() => api.admin.prices(), [])
+  const empty = { product_name: '', unit: 'libra', price: '', province: '', market: '', source: 'Reporte de productores', source_url: '', date: new Date().toISOString().slice(0, 10) }
+  const [f, setF] = useState(empty)
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  const pending = (data || []).filter((p) => !p.approved)
+  return (
+    <>
+      <div className="card form-card">
+        <p className="filters__h">Cargar precio</p>
+        <form className="form form--3" onSubmit={async (e) => {
+          e.preventDefault()
+          await api.admin.savePrice({ ...f, product_slug: f.product_name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-'), price: Number(f.price), province: f.province || null, is_reference: false })
+          setF(empty); reload()
+        }}>
+          <Field label="Producto"><input required value={f.product_name} onChange={set('product_name')} /></Field>
+          <Field label="Precio B/."><input required type="number" step="0.01" value={f.price} onChange={set('price')} /></Field>
+          <Field label="Unidad"><select value={f.unit} onChange={set('unit')}>{UNITS.map((u) => <option key={u}>{u}</option>)}</select></Field>
+          <Field label="Provincia"><select value={f.province} onChange={set('province')}><option value="">Nacional</option>{PROVINCES.map((p) => <option key={p}>{p}</option>)}</select></Field>
+          <Field label="Mercado / lugar"><input value={f.market} onChange={set('market')} /></Field>
+          <Field label="Fuente"><select value={f.source} onChange={set('source')}><option>Reporte de productores</option><option>INEC</option><option>Acodeco</option><option>Subasta ganadera</option><option>MIDA</option></select></Field>
+          <Field label="Enlace de la fuente"><input value={f.source_url} onChange={set('source_url')} placeholder="https://" /></Field>
+          <Field label="Fecha"><input type="date" value={f.date} onChange={set('date')} /></Field>
+          <div className="form__actions"><button className="btn btn--fill">Guardar precio</button></div>
+        </form>
+      </div>
+      {pending.length > 0 && <>
+        <h2 className="h2">Reportes de productores por aprobar ({pending.length})</h2>
+        <PriceRows rows={pending} reload={reload} approve />
+      </>}
+      <h2 className="h2">Últimos precios</h2>
+      {!data ? <Loading /> : <PriceRows rows={data.filter((p) => p.approved).slice(0, 60)} reload={reload} />}
+    </>
+  )
+}
+const PriceRows = ({ rows, reload, approve }) => (
+  <div className="table-wrap"><table className="table">
+    <thead><tr><th>Fecha</th><th>Producto</th><th>Precio</th><th>Fuente</th><th></th></tr></thead>
+    <tbody>{rows.map((p) => (
+      <tr key={p.id}>
+        <td className="muted">{p.date}</td>
+        <td>{p.product_name}<br /><span className="muted small">{[p.province, p.market].filter(Boolean).join(' · ')}</span></td>
+        <td className="num">{money(p.price)} / {p.unit}</td>
+        <td>{p.source}{p.is_reference ? ' (ref.)' : ''}</td>
+        <td className="actions">
+          {approve && <button className="btn btn--fill btn--xs" onClick={() => api.admin.savePrice({ id: p.id, approved: true }).then(reload)}>Aprobar</button>}
+          <button className="linkbtn down" onClick={() => api.admin.deletePrice(p.id).then(reload)}>Borrar</button>
+        </td>
+      </tr>
+    ))}</tbody>
+  </table></div>
+)
+
+function Social() {
+  const { data, reload } = useAsync(() => api.admin.social(), [])
+  if (!data) return <Loading />
+  return (
+    <>
+      <p className="muted">Al aprobar un anuncio se crea la publicación en Facebook e Instagram de la plataforma. Mientras Meta aprueba los permisos, quedan "pendientes" y se publican con el botón.</p>
+      <div className="table-wrap"><table className="table">
+        <thead><tr><th>Anuncio</th><th>Red</th><th>Estado</th><th></th></tr></thead>
+        <tbody>{data.map((p) => (
+          <tr key={p.id}>
+            <td><Link to={`/anuncio/${p.listing?.slug}`}>{p.listing?.title}</Link><br /><Ago iso={p.created_at} /></td>
+            <td><span className={`net net--${p.network}`}>{p.network}</span></td>
+            <td><span className={`status status--${p.status === 'publicado' ? 'aprobado' : p.status === 'error' ? 'rechazado' : 'pendiente'}`}>{p.status}</span>{p.error && <><br /><span className="down small">{p.error}</span></>}</td>
+            <td>{p.status !== 'publicado' ? <button className="btn btn--fill btn--xs" onClick={() => api.admin.publishNow(p.listing_id).then(reload)}>Publicar ahora</button> : p.permalink && <a href={p.permalink} target="_blank" rel="noopener">Ver post</a>}</td>
+          </tr>
+        ))}</tbody>
+      </table></div>
+    </>
+  )
+}
+
+function Comments() {
+  const { data } = useAsync(() => api.admin.comments(), [])
+  if (!data) return <Loading />
+  return (
+    <div className="table-wrap"><table className="table">
+      <thead><tr><th>Comentario</th><th>Anuncio</th><th>Estado</th></tr></thead>
+      <tbody>{data.map((c) => (
+        <tr key={c.id}>
+          <td><span className={`net net--${c.network}`}>{c.network}</span> <strong>{c.author_name}</strong>: {c.message}<br /><Ago iso={c.created_at} /></td>
+          <td><Link to={`/anuncio/${c.listing?.slug}`}>{c.listing?.title}</Link></td>
+          <td>{c.reply ? <span className="status status--aprobado">Respondido</span> : <span className="status status--pendiente">Sin responder</span>}</td>
+        </tr>
+      ))}</tbody>
+    </table></div>
+  )
+}
+
+function Ads() {
+  const { data, reload } = useAsync(() => api.admin.ads(), [])
+  const empty = { placement: 'home_top', advertiser: '', image_url: '', link_url: '', ends_at: '', active: true }
+  const [f, setF] = useState(empty)
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  return (
+    <>
+      <div className="card form-card">
+        <p className="filters__h">Nuevo espacio publicitario</p>
+        <form className="form form--3" onSubmit={async (e) => { e.preventDefault(); await api.admin.saveAd({ ...f, ends_at: f.ends_at || null }); setF(empty); reload() }}>
+          <Field label="Ubicación"><select value={f.placement} onChange={set('placement')}>{Object.entries(AD_PLACEMENTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          <Field label="Anunciante"><input required value={f.advertiser} onChange={set('advertiser')} /></Field>
+          <Field label="Imagen (URL)" hint="Banner horizontal, 1200×200"><input value={f.image_url} onChange={set('image_url')} /></Field>
+          <Field label="Enlace"><input value={f.link_url} onChange={set('link_url')} /></Field>
+          <Field label="Termina"><input type="date" value={f.ends_at} onChange={set('ends_at')} /></Field>
+          <div className="form__actions"><button className="btn btn--fill">Guardar</button></div>
+        </form>
+      </div>
+      {!data ? <Loading /> : (
+        <div className="table-wrap"><table className="table">
+          <thead><tr><th>Anunciante</th><th>Ubicación</th><th>Impresiones / clics</th><th>Activo</th></tr></thead>
+          <tbody>{data.map((a) => (
+            <tr key={a.id}>
+              <td>{a.advertiser}</td><td>{AD_PLACEMENTS[a.placement]}</td><td className="num">{a.impressions} / {a.clicks}</td>
+              <td><button className={`btn btn--xs ${a.active ? 'btn--fill' : 'btn--ghost'}`} onClick={() => api.admin.saveAd({ id: a.id, active: !a.active }).then(reload)}>{a.active ? 'Activo' : 'Inactivo'}</button></td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+      )}
+    </>
+  )
+}
+
+function Reports() {
+  const { data, reload } = useAsync(() => api.admin.reports(), [])
+  if (!data) return <Loading />
+  if (!data.length) return <p className="empty">No hay reportes.</p>
+  return (
+    <div className="table-wrap"><table className="table">
+      <thead><tr><th>Anuncio</th><th>Motivo</th><th>Estado</th><th></th></tr></thead>
+      <tbody>{data.map((r) => (
+        <tr key={r.id}>
+          <td><Link to={`/anuncio/${r.listing?.slug}`}>{r.listing?.title}</Link><br /><Ago iso={r.created_at} /></td>
+          <td>{r.reason}{r.details && <><br /><span className="muted small">{r.details}</span></>}</td>
+          <td><span className={`status status--${r.status === 'abierto' ? 'pendiente' : 'aprobado'}`}>{r.status}</span></td>
+          <td>{r.status === 'abierto' && <button className="btn btn--ghost btn--xs" onClick={() => api.admin.resolveReport(r.id).then(reload)}>Marcar resuelto</button>}</td>
+        </tr>
+      ))}</tbody>
+    </table></div>
+  )
+}
