@@ -32,7 +32,7 @@ publicar → revisar en admin → aprobar → cola de redes → comentarios.
 4. Regístrate en la web y hazte admin en el SQL Editor:
    ```sql
    update public.profiles set role = 'admin'
-   where id = (select id from auth.users where email = 'navasfinca@gmail.com');
+   where id = (select id from auth.users where email = 'fincayapanama@gmail.com');
    ```
 5. Tareas diarias (**Database → Cron**, extensión `pg_cron`):
    ```sql

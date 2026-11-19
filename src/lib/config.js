@@ -3,7 +3,7 @@ export const BRAND = {
   name: 'FincaYa Panamá',
   tagline: 'Todo el agro, en un solo lugar.',
   url: 'https://fincayapanama.com',
-  whatsapp: '50760359444', // WhatsApp de soporte de la plataforma
+  whatsapp: '50762913387', // WhatsApp de soporte de FincaYa Panamá (separado de Finca Navas)
   instagram: 'fincayapanama',
   facebook: 'fincayapanama',
   tiktok: 'fincayapanama',

@@ -34,7 +34,7 @@ export function Login() {
         <form onSubmit={submit} className="form">
           {mode === 'registro' && <>
             <Field label="Nombre completo"><input required value={f.full_name} onChange={set('full_name')} /></Field>
-            <Field label="WhatsApp" hint="Ej. 6035-9444. Aquí te avisamos de comentarios y clientes."><input required value={f.phone} onChange={set('phone')} inputMode="tel" /></Field>
+            <Field label="WhatsApp" hint="Ej. 6291-3387. Aquí te avisamos de comentarios y clientes."><input required value={f.phone} onChange={set('phone')} inputMode="tel" /></Field>
           </>}
           <Field label="Correo"><input type="email" required value={f.email} onChange={set('email')} /></Field>
           {!DEMO && <Field label="Contraseña"><input type="password" required minLength={8} value={f.password} onChange={set('password')} /></Field>}
