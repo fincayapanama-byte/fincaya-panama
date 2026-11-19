@@ -341,3 +341,65 @@ a.more:hover { background: rgba(11,93,59,.08); gap: 10px; }
 .ftr .ftr__social .social__btn { display: inline-grid; place-items: center; width: 42px; height: 42px; padding: 0; margin: 0; background: rgba(255,255,255,.12); color: #fff; }
 .ftr .ftr__social .social__btn .ico { display: block; }
 .ftr .ftr__social .social__btn:hover { color: #fff; }
+
+/* ===== Optimización móvil ===== */
+html, body { overflow-x: hidden; }
+img, video, iframe { max-width: 100%; }
+.detail > *, .search-layout > *, .grid > *, .brand-grid > * { min-width: 0; }
+.detail--listing { grid-template-columns: minmax(0, 1fr) 360px; grid-template-areas: "gallery buy" "info buy"; }
+.detail__gallery { grid-area: gallery; }
+.detail__info { grid-area: info; }
+.detail__buy { grid-area: buy; }
+.gallery__thumbs { scrollbar-width: none; }
+.gallery__thumbs::-webkit-scrollbar { display: none; }
+.prose { overflow-wrap: anywhere; white-space: pre-line; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+.mobilebar { display: none; }
+
+@media (max-width: 960px) {
+  .detail--listing { grid-template-columns: minmax(0, 1fr); grid-template-areas: "gallery" "buy" "info"; gap: 16px; }
+}
+@media (max-width: 600px) {
+  .wrap { padding-left: 16px; padding-right: 16px; }
+  .section { padding-top: 24px; }
+  .crumbs { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 10px; }
+  .gallery__main { aspect-ratio: 1 / 1; border-radius: 14px; }
+  .gallery__thumbs button { width: 64px; height: 52px; }
+  .buybox { padding: 16px; gap: 10px; }
+  .buybox__title { font-size: 21px; line-height: 1.25; }
+  .buybox__price { font-size: 26px; }
+  .h1 { font-size: 26px; line-height: 1.2; }
+  .h2 { font-size: 21px; }
+  .lead { font-size: 15.5px; }
+  .specs { grid-template-columns: 1fr 1fr; }
+  .toolbar { flex-wrap: wrap; }
+  .toolbar > * { flex: 1 1 100%; min-width: 0; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; padding: 0 16px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; }
+  /* Tabla de precios como tarjetas en el celular */
+  .table.prices thead { display: none; }
+  .table.prices, .table.prices tbody, .table.prices tr, .table.prices td { display: block; width: 100%; }
+  .table.prices tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .table.prices td { padding: 0; border: 0; }
+  .table.prices td.pc-name { grid-column: 1; grid-row: 1; }
+  .table.prices td.pc-price { grid-column: 2; grid-row: 1 / span 2; text-align: right; }
+  .table.prices td.pc-chg { grid-column: 1; grid-row: 2; text-align: left; font-size: 13px; }
+  .table.prices td.pc-spark { display: none; }
+  .table.prices td.pc-src, .table.prices td.pc-date { grid-row: 3; font-size: 12.5px; }
+  .table.prices td.pc-src { grid-column: 1; }
+  .table.prices td.pc-date { grid-column: 2; text-align: right; }
+  /* Barra fija de contacto en el anuncio */
+  .mobilebar { display: flex; align-items: center; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--white, #fff); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(0,0,0,.08); }
+  .mobilebar__price { flex: 1; font-weight: 800; font-size: 18px; color: var(--green-900, #0B5D3B); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mobilebar__price small { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .mobilebar .btn { min-height: 46px; padding: 10px 16px; }
+  .mobilebar__call { width: 46px; padding: 0 !important; }
+  body:has(.mobilebar) .ftr { padding-bottom: 90px; }
+  .social__btn { width: 42px; height: 42px; }
+  .farmhero__logo { width: 72px; height: 72px; }
+}
+@media (max-width: 600px) {
+  .table.prices tr { padding: 12px 14px; }
+  .toolbar > select { flex: 1 1 calc(50% - 5px); }
+}

@@ -13,6 +13,9 @@ const cors = {
 const json = (b: unknown, status = 200) => Response.json(b, { status, headers: cors })
 const money = (n: number | null) => (n == null ? 'Consultar' : `B/. ${Number(n).toFixed(2)}`)
 
+// Instagram no permite enlaces clicables en el texto: cambiamos la URL por "enlace en la bio"
+const igText = (t: string) => t.replace(/https?:\/\/(www\.)?fincayapanama\.com\S*/g, 'fincayapanama.com 🔗 (enlace en nuestra bio)')
+
 async function graph(path: string, params: Record<string, string>) {
   const body = new URLSearchParams({ ...params, access_token: env('META_PAGE_TOKEN') })
   const r = await fetch(`${GRAPH}/${path}`, { method: 'POST', body })
@@ -50,7 +53,7 @@ Deno.serve(async (req) => {
         if (!image_url) results.instagram = 'error: Instagram requiere una imagen'
         else {
           try {
-            const c = await graph(`${env('META_IG_USER_ID')}/media`, { image_url, caption: message })
+            const c = await graph(`${env('META_IG_USER_ID')}/media`, { image_url, caption: igText(message) })
             for (let i = 0; i < 10; i++) {
               const s = await (await fetch(`${GRAPH}/${c.id}?fields=status_code&access_token=${env('META_PAGE_TOKEN')}`)).json()
               if (s.status_code === 'FINISHED') break
@@ -116,7 +119,7 @@ Deno.serve(async (req) => {
       results.instagram = 'ya publicado o en proceso'
     } else if (image && env('META_IG_USER_ID')) {
       try {
-        const container = await graph(`${env('META_IG_USER_ID')}/media`, { image_url: image, caption })
+        const container = await graph(`${env('META_IG_USER_ID')}/media`, { image_url: image, caption: igText(caption) })
         // Esperar a que Instagram procese la imagen
         for (let i = 0; i < 10; i++) {
           const s = await (await fetch(`${GRAPH}/${container.id}?fields=status_code&access_token=${env('META_PAGE_TOKEN')}`)).json()

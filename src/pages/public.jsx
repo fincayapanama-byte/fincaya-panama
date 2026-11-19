@@ -17,6 +17,9 @@ export function sortPrices(list, order) {
   return l.sort((a, b) => a.product_name.localeCompare(b.product_name))
 }
 
+// Quita barras invertidas que quedan al pegar texto con formato (ej. "necesitas\\!")
+export const cleanText = (t) => (t || '').replace(/\\([!.#*_\-()[\]+=~>|`{}])/g, '$1').trim()
+
 const provBySlug = (s) => PROVINCES.find((p) => slugify(p) === s)
 
 // ================================ HOME ================================
@@ -260,8 +263,8 @@ export function ListingPage() {
     <div className="wrap section">
       <Seo title={`${l.title} en ${l.district ? `${l.district}, ` : ''}${l.province}`} description={`${l.title} — ${money(l.price)} por ${l.unit}. ${l.description || ''}`.slice(0, 158)} jsonld={jsonld} />
       <nav className="crumbs"><Link to="/">Inicio</Link> / <Link to={`/c/${l.category_slug}`}>{l.category?.name}</Link> / <Link to={`/c/${l.category_slug}/${slugify(l.province)}`}>{l.province}</Link></nav>
-      <div className="detail">
-        <div>
+      <div className="detail detail--listing">
+        <div className="detail__gallery">
           <div className="gallery__main" style={l.images?.[img] ? { backgroundImage: `url(${l.images[img]})` } : undefined}>
             {!l.images?.length && <span className="muted">Sin fotos</span>}
           </div>
@@ -270,8 +273,10 @@ export function ListingPage() {
               {l.images.map((src, i) => <button key={src + i} onClick={() => setImg(i)} className={i === img ? 'is-on' : ''} style={{ backgroundImage: `url(${src})` }} aria-label={`Foto ${i + 1}`} />)}
             </div>
           )}
+        </div>
+        <div className="detail__info">
           <h2 className="h2">Descripción</h2>
-          <p className="prose">{l.description || 'Sin descripción.'}</p>
+          <p className="prose">{cleanText(l.description) || 'Sin descripción.'}</p>
           <dl className="specs">
             <div><dt>Categoría</dt><dd>{l.category?.name}</dd></div>
             {l.breed && <div><dt>Raza / variedad</dt><dd>{l.breed}</dd></div>}
@@ -282,7 +287,7 @@ export function ListingPage() {
           </dl>
           <AdSlot placement="anuncio_inferior" />
         </div>
-        <aside className="buybox card">
+        <aside className="buybox card detail__buy">
           <div className="buybox__top">{l.featured ? <span className="tag tag--accent">Destacado</span> : <span />}<FavButton id={l.id} big /></div>
           <h1 className="buybox__title">{l.title}</h1>
           <p className="buybox__price">{money(l.price)} <span>/ {l.unit}</span></p>
@@ -298,6 +303,11 @@ export function ListingPage() {
           </div>
           <button className="linkbtn" onClick={report} disabled={reported}>{reported ? 'Gracias, revisaremos el anuncio' : 'Reportar anuncio'}</button>
         </aside>
+      </div>
+      <div className="mobilebar">
+        <span className="mobilebar__price">{money(l.price)}<small> / {l.unit}</small></span>
+        {f.phone && <a className="btn btn--ghost mobilebar__call" href={`tel:${f.phone}`} onClick={contact} aria-label="Llamar"><IcoPhone /></a>}
+        <a className="btn btn--wa" href={waLink(f.whatsapp, text)} target="_blank" rel="noopener" onClick={contact}><IcoWhatsApp size={20} /> WhatsApp</a>
       </div>
       <section className="section">
         <h2 className="h2">Anuncios similares</h2>
@@ -334,7 +344,7 @@ export function FarmPage() {
       <div className="wrap section detail">
         <div>
           <h2 className="h2">Sobre la finca</h2>
-          <p className="prose">{f.description || 'Esta finca aún no agregó una descripción.'}</p>
+          <p className="prose">{cleanText(f.description) || 'Esta finca aún no agregó una descripción.'}</p>
           <h2 className="h2">Productos disponibles ({f.listings.length})</h2>
           <Grid items={f.listings} empty="Esta finca no tiene anuncios activos." />
         </div>

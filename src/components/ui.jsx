@@ -166,12 +166,12 @@ export function PriceTable({ rows, compact }) {
         <tbody>
           {list.map((p) => (
             <tr key={`${p.product_slug}${p.unit}${p.province}${p.market}${p.source}`}>
-              <td><strong>{p.product_name}</strong><br /><span className="muted">{[p.market || p.province, p.origin && `origen ${p.origin}`].filter(Boolean).join(' · ') || 'Nacional'}</span></td>
-              <td className="num">{money(p.price)}<br /><span className="muted">por {p.unit}</span>{range(p) && <><br /><span className="muted small">{money(p.price_min)} – {money(p.price_max)}</span></>}</td>
-              <td className={`num ${p.change > 0 ? 'up' : p.change < 0 ? 'down' : ''}`}>{p.change > 0 ? '▲' : p.change < 0 ? '▼' : '='} {(Math.abs(p.change) * 100).toFixed(1)}%</td>
-              {!compact && <td><Sparkline values={p.values} /></td>}
-              <td>{p.source_url ? <a href={p.source_url} target="_blank" rel="noopener">{p.source}</a> : p.source}{p.is_reference && <><br /><span className="tag">Referencia</span></>}</td>
-              <td className="muted">{p.date}</td>
+              <td className="pc-name"><strong>{p.product_name}</strong><br /><span className="muted">{[p.market || p.province, p.origin && `origen ${p.origin}`].filter(Boolean).join(' · ') || 'Nacional'}</span></td>
+              <td className="num pc-price">{money(p.price)}<br /><span className="muted">por {p.unit}</span>{range(p) && <><br /><span className="muted small">{money(p.price_min)} – {money(p.price_max)}</span></>}</td>
+              <td className={`num pc-chg ${p.change > 0 ? 'up' : p.change < 0 ? 'down' : ''}`}>{p.change > 0 ? '▲' : p.change < 0 ? '▼' : '='} {(Math.abs(p.change) * 100).toFixed(1)}%</td>
+              {!compact && <td className="pc-spark"><Sparkline values={p.values} /></td>}
+              <td className="pc-src">{p.source_url ? <a href={p.source_url} target="_blank" rel="noopener">{p.source}</a> : p.source}{p.is_reference && <><br /><span className="tag">Referencia</span></>}</td>
+              <td className="muted pc-date">{p.date}</td>
             </tr>
           ))}
         </tbody>
