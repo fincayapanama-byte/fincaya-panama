@@ -4,7 +4,7 @@ import { api } from '../lib/api'
 import { useAsync } from '../lib/useAsync'
 import { BRAND, PROVINCES, money, slugify, waLink } from '../lib/config'
 import { IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, handle } from '../components/icons'
-import { AdSlot, Ago, FavButton, Grid, Loading, PriceTable, Seo, Verified, ListingCard } from '../components/ui'
+import { AdSlot, Ago, FavButton, Grid, Loading, PriceTable, Seo, Sparkline, Verified, ListingCard } from '../components/ui'
 
 // Ordena el resumen de precios. En alza/baja, lo más reciente va primero ante empates.
 export function sortPrices(list, order) {
@@ -431,6 +431,69 @@ export function Prices() {
       {data && <p className="muted small">{rows.length} productos{last && ` · actualizado al ${last}`}</p>}
       <PriceTable rows={data ? rows : null} />
       <p className="muted small">¿Eres productor y conoces el precio de hoy en tu zona? <Link to="/panel/precio">Repórtalo desde tu panel</Link>.</p>
+      <AdSlot placement="precios" />
+    </div>
+  )
+}
+
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+const fmtDate = (d) => { if (!d) return ''; const [y, m, dd] = d.split('-').map(Number); return `${dd} de ${MESES[m - 1]} de ${y}` }
+
+export function ProductPrice() {
+  const { slug } = useParams()
+  const { data: rows, loading } = useAsync(() => api.productPrices(slug), [slug])
+  if (loading) return <div className="wrap section"><Loading /></div>
+  if (!rows?.length) return <NotFound />
+  const name = rows[0].product_name
+  const latest = []; const seen = new Set()
+  for (const r of rows) { const k = r.market || r.source; if (!seen.has(k)) { seen.add(k); latest.push(r) } }
+  const main = latest.find((r) => r.market === 'Merca Panamá') || latest[0]
+  const series = rows.filter((r) => (r.market || r.source) === (main.market || main.source)).slice().reverse()
+  const prev = series.length > 1 ? series.at(-2) : null
+  const chg = prev ? (main.price - prev.price) / prev.price : 0
+  const values = series.map((r) => Number(r.price))
+  const lo = Math.min(...values), hi = Math.max(...values)
+  return (
+    <div className="wrap section">
+      <Seo title={`Precio de ${name} hoy en Panamá (${fmtDate(main.date)})`}
+        description={`${name}: ${money(main.price)} por ${main.unit} en ${main.market || 'Panamá'} el ${fmtDate(main.date)}. Historial de 60 días y precio por mercado. Fuente: IMA.`} />
+      <nav className="crumbs"><Link to="/precios">Precios del día</Link> / {name}</nav>
+      <h1 className="h1">Precio de {name} hoy en Panamá</h1>
+      <div className="pp-hero card">
+        <div>
+          <p className="muted small">{main.market || main.source} · {fmtDate(main.date)}</p>
+          <p className="pp-price">{money(main.price)} <span>/ {main.unit}</span></p>
+          {main.price_min != null && Number(main.price_min) !== Number(main.price_max) && <p className="muted">Rango del día: {money(main.price_min)} – {money(main.price_max)}</p>}
+          {main.origin && <p className="muted small">Origen: {main.origin}</p>}
+        </div>
+        <div className="pp-chg">
+          <span className={chg > 0 ? 'up' : chg < 0 ? 'down' : ''}>{chg > 0 ? '▲' : chg < 0 ? '▼' : '='} {(Math.abs(chg) * 100).toFixed(1)}%</span>
+          <span className="muted small">vs. día anterior</span>
+        </div>
+      </div>
+      {values.length > 1 && (
+        <section className="card pp-chart">
+          <p className="filters__h">Tendencia · {series.length} días</p>
+          <Sparkline values={values} w={640} h={120} stretch />
+          <p className="muted small">Mínimo {money(lo)} · Máximo {money(hi)} en el periodo</p>
+        </section>
+      )}
+      {latest.length > 1 && <>
+        <h2 className="h2">Precio por mercado</h2>
+        <PriceTable rows={latest.map((r) => ({ ...r, values: rows.filter((x) => (x.market || x.source) === (r.market || r.source)).map((x) => Number(x.price)).reverse(), change: 0 }))} compact />
+      </>}
+      <h2 className="h2">Historial</h2>
+      <div className="table-wrap"><table className="table">
+        <thead><tr><th>Fecha</th><th>Mercado</th><th>Precio</th></tr></thead>
+        <tbody>{rows.slice(0, 60).map((r, i) => <tr key={i}><td className="muted">{r.date}</td><td>{r.market || r.source}</td><td className="num">{money(r.price)} / {r.unit}</td></tr>)}</tbody>
+      </table></div>
+      <p className="muted small">{rows.some((r) => r.source === 'IMA') ? <>Fuente: <a href="https://sipan.ima.gob.pa" target="_blank" rel="noopener">IMA – SIPAN</a>. Precios mayoristas de referencia.</> : <>Fuente: {main.source}. Precios de referencia.</>}</p>
+      <div className="pitch card">
+        <h2 className="h2">¿Produces o compras {name.toLowerCase()}?</h2>
+        <p>Publica gratis tu cosecha y recibe clientes por WhatsApp, o busca productores cerca de ti.</p>
+        <Link className="btn btn--fill" to="/publicar">Publicar gratis</Link>
+        <Link className="btn btn--ghost" to={`/buscar?q=${encodeURIComponent(name.split(' ')[0])}`}>Buscar productores</Link>
+      </div>
       <AdSlot placement="precios" />
     </div>
   )

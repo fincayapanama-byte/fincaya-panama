@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { BRAND } from '../../lib/config'
-import { composeBrandImage } from '../../lib/brandImage'
+import { composeBrandImage, composePricesImage } from '../../lib/brandImage'
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -332,6 +332,38 @@ function BrandPosts() {
     catch (err) { alert(err.message || 'No se pudo preparar la imagen') }
     finally { setUp(false); e.target.value = '' }
   }
+  const [mk, setMk] = useState(false)
+  // Arma la publicación diaria de precios: imagen con la tabla + texto con alzas y bajas
+  const makePrices = async () => {
+    setMk(true)
+    try {
+      const all = await api.prices({ days: 10, market: 'Merca Panamá' })
+      const day = all.reduce((m, p) => (p.date > m ? p.date : m), '')
+      const today = all.filter((p) => p.date === day && p.source === 'IMA')
+      if (!today.length) throw new Error('Aún no hay precios del IMA para hoy. Sincroniza en Admin → Precios.')
+      const ups = today.filter((p) => p.change > 0).sort((a, b) => b.change - a.change)
+      const downs = today.filter((p) => p.change < 0).sort((a, b) => a.change - b.change)
+      const KEY = ['name', 'yuca', 'otoe', 'platano', 'tomate', 'cebolla', 'papa', 'arroz-pilado']
+      const featured = today.filter((p) => KEY.some((k) => p.product_slug.startsWith(k)))
+      const pick = [...ups.slice(0, 4), ...downs.slice(0, 4)]
+      for (const f of featured) if (pick.length < 8 && !pick.includes(f)) pick.push(f)
+      const [y, m, d] = day.split('-').map(Number)
+      const fecha = `${d} de ${['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][m - 1]}`
+      const file = await composePricesImage(pick, { title: 'Precios de hoy', subtitle: `Merca Panamá · ${fecha} de ${y}` })
+      const url = await api.uploadImage(user, file)
+      const line = (p) => `• ${p.product_name}: B/. ${Number(p.price).toFixed(2)} / ${p.unit} (${p.change > 0 ? '▲' : '▼'} ${(Math.abs(p.change) * 100).toFixed(1)}%)`
+      setImg(url)
+      setText([
+        `📊 Precios de hoy en Merca Panamá · ${fecha}`,
+        ups.length ? `\n🔺 Suben:\n${ups.slice(0, 4).map(line).join('\n')}` : '',
+        downs.length ? `\n🔻 Bajan:\n${downs.slice(0, 4).map(line).join('\n')}` : '',
+        `\n👉 Los ${today.length} precios del día, con historial: ${BRAND.url}/precios`,
+        `📲 ¿Vendes ñame, yuca, plátano, ganado o cerdos? Publica gratis en ${BRAND.url}/publicar`,
+        `\nFuente: IMA (Instituto de Mercadeo Agropecuario).`,
+        `#PreciosDelDía #MercaPanamá #AgroPanamá #FincaYaPanamá #ProductoresPanameños #Panamá`,
+      ].filter(Boolean).join('\n'))
+    } catch (err) { alert(err.message || String(err)) } finally { setMk(false) }
+  }
   const publish = async () => {
     if (busy || !confirm(`Se publicará ahora en: ${networks.join(' y ')}. ¿Continuar?`)) return
     setBusy(true); setRes(null)
@@ -341,7 +373,11 @@ function BrandPosts() {
   return (
     <>
       <p className="muted">Publica en el Facebook e Instagram de {BRAND.name}: bienvenidas, convocatorias, consejos. Instagram requiere imagen (se convierte a JPG automáticamente; ideal 1080×1350).</p>
-      <div className="chips">{TEMPLATES.map((t) => <button key={t.name} className="chip" onClick={() => setText(t.text)}>{t.name}</button>)}</div>
+      <div className="chips">
+        <button className="chip is-on" onClick={makePrices} disabled={mk}>{mk ? 'Armando…' : '📊 Precios del día (automático)'}</button>
+        {TEMPLATES.map((t) => <button key={t.name} className="chip" onClick={() => setText(t.text)}>{t.name}</button>)}
+      </div>
+      <p className="muted small">Consejo: publica los precios del día todas las mañanas después de las 7:30 a. m. Es el contenido que más se comparte en grupos de productores.</p>
       <div className="brand-grid">
         <div className="card form-card form">
           <Field label={`Texto (${text.length}/2200)`}><textarea rows="14" maxLength={2200} value={text} onChange={(e) => setText(e.target.value)} /></Field>

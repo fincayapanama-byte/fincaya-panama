@@ -128,14 +128,14 @@ export function Grid({ items, empty = 'No hay anuncios con esos filtros todavía
 
 export const Loading = () => <p className="muted loading">Cargando…</p>
 
-export function Sparkline({ values, w = 120, h = 32 }) {
+export function Sparkline({ values, w = 120, h = 32, stretch = false }) {
   if (!values?.length) return null
   const min = Math.min(...values), max = Math.max(...values), span = max - min || 1
   const pts = values.map((v, i) => `${(i / Math.max(1, values.length - 1)) * w},${h - 3 - ((v - min) / span) * (h - 6)}`).join(' ')
   const up = values.at(-1) >= values[0]
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="spark" aria-hidden="true">
-      <polyline points={pts} fill="none" stroke={up ? 'var(--green)' : 'var(--red)'} strokeWidth="2" strokeLinejoin="round" />
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="spark" aria-hidden="true" preserveAspectRatio={stretch ? 'none' : undefined}>
+      <polyline points={pts} fill="none" stroke={up ? 'var(--green)' : 'var(--red)'} strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }
@@ -166,7 +166,7 @@ export function PriceTable({ rows, compact }) {
         <tbody>
           {list.map((p) => (
             <tr key={`${p.product_slug}${p.unit}${p.province}${p.market}${p.source}`}>
-              <td className="pc-name"><strong>{p.product_name}</strong><br /><span className="muted">{[p.market || p.province, p.origin && `origen ${p.origin}`].filter(Boolean).join(' · ') || 'Nacional'}</span></td>
+              <td className="pc-name"><Link className="pc-link" to={`/precios/${p.product_slug}`}><strong>{p.product_name}</strong></Link><br /><span className="muted">{[p.market || p.province, p.origin && `origen ${p.origin}`].filter(Boolean).join(' · ') || 'Nacional'}</span></td>
               <td className="num pc-price">{money(p.price)}<br /><span className="muted">por {p.unit}</span>{range(p) && <><br /><span className="muted small">{money(p.price_min)} – {money(p.price_max)}</span></>}</td>
               <td className={`num pc-chg ${p.change > 0 ? 'up' : p.change < 0 ? 'down' : ''}`}>{p.change > 0 ? '▲' : p.change < 0 ? '▼' : '='} {(Math.abs(p.change) * 100).toFixed(1)}%</td>
               {!compact && <td className="pc-spark"><Sparkline values={p.values} /></td>}

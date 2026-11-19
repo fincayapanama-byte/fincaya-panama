@@ -169,6 +169,13 @@ export const api = {
       change: r.prev_price ? (Number(r.price) - Number(r.prev_price)) / Number(r.prev_price) : 0,
     }))
   },
+  // Historial de un producto (todas las fuentes y mercados)
+  async productPrices(slug, { days = 60 } = {}) {
+    const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
+    if (DEMO) return load().prices.filter((p) => p.approved && p.product_slug === slug && p.date >= since).sort((a, b) => b.date.localeCompare(a.date))
+    return ok(await supabase.from('prices').select('product_slug,product_name,unit,price,price_min,price_max,market,origin,source,source_url,date')
+      .eq('product_slug', slug).eq('approved', true).gte('date', since).order('date', { ascending: false }).limit(2000)) || []
+  },
   async priceMarkets({ days = 30 } = {}) {
     if (DEMO) {
       const by = {}

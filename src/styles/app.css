@@ -403,3 +403,16 @@ img, video, iframe { max-width: 100%; }
   .table.prices tr { padding: 12px 14px; }
   .toolbar > select { flex: 1 1 calc(50% - 5px); }
 }
+
+/* Página de precio por producto */
+.pc-link { color: inherit; text-decoration: none; }
+.pc-link:hover strong { text-decoration: underline; color: var(--green-600, #0B5D3B); }
+.pp-hero { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px; margin: 12px 0 16px; }
+.pp-price { font-size: 38px; font-weight: 800; color: var(--green-900, #0B5D3B); margin: 4px 0; }
+.pp-price span { font-size: 16px; font-weight: 500; color: var(--muted); }
+.pp-chg { display: grid; justify-items: end; gap: 2px; font-size: 22px; font-weight: 800; }
+.pp-chart { padding: 16px; margin-bottom: 16px; }
+.pp-chart svg { width: 100%; height: 120px; }
+.pitch .btn + .btn { margin-left: 8px; }
+@media (max-width: 600px) { .pp-price { font-size: 30px; } .pp-hero { flex-direction: column; align-items: flex-start; } .pp-chg { justify-items: start; } }
+.pitch .h2 { color: #fff; }

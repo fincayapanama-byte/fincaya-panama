@@ -3,6 +3,14 @@
 import { q, esc, SITE, BRAND } from './_db.js'
 
 const money = (n) => (n == null ? 'Consultar' : `B/. ${Number(n).toFixed(2)}`)
+const slugify = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+const daysAgo = (n) => new Date(Date.now() - 5 * 3600e3 - n * 864e5).toISOString().slice(0, 10)
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+const fmtDate = (d) => { if (!d) return ''; const [y, m, dd] = d.split('-').map(Number); return `${dd} de ${MESES[m - 1]} de ${y}` }
+const unitWord = (u) => (String(u || '').split(' ')[0] || 'kilo')
+// Último registro por clave (las filas vienen ordenadas por fecha descendente)
+const latestBy = (rows, key = (x) => x.product_slug) => { const seen = new Set(); return rows.filter((r) => { const k = key(r); if (seen.has(k)) return false; seen.add(k); return true }) }
+const priceList = (list) => `<table><tr><th>Producto</th><th>Precio</th><th>Unidad</th></tr>${list.map((r) => `<tr><td><a href="${SITE}/precios/${esc(r.product_slug)}">${esc(r.product_name)}</a></td><td>${money(r.price)}</td><td>${esc(r.unit)}</td></tr>`).join('')}</table>`
 
 function page({ title, description, image, url, jsonld, body }) {
   return `<!doctype html><html lang="es-PA"><head><meta charset="utf-8">
@@ -13,7 +21,7 @@ function page({ title, description, image, url, jsonld, body }) {
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}">
 ${image ? `<meta property="og:image" content="${esc(image)}">` : ''}<meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>
+${(Array.isArray(jsonld) ? jsonld : [jsonld]).map((j) => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('')}
 </head><body>${body}<p><a href="${SITE}">${esc(BRAND)}</a> · directorio agropecuario de Panamá</p></body></html>`
 }
 
@@ -59,6 +67,116 @@ ${(l.images || []).map((src) => `<img src="${esc(src)}" alt="${esc(l.title)}">`)
 <h2>Productos</h2><ul>${ls.map((l) => `<li><a href="${SITE}/anuncio/${esc(l.slug)}">${esc(l.title)}</a> — ${money(l.price)} / ${esc(l.unit)}</li>`).join('')}</ul>`,
       })
     }
+  }
+
+  // ---------- Portada ----------
+  if (path === '/' || path === '') {
+    const [ls, prices, cats] = await Promise.all([
+      q('listings?status=eq.aprobado&select=title,slug,price,unit,province&order=created_at.desc&limit=24'),
+      q(`prices?source=eq.IMA&market=eq.${encodeURIComponent('Merca Panamá')}&date=gte.${daysAgo(4)}&select=product_slug,product_name,unit,price,date&order=date.desc&limit=400`),
+      q('categories?parent_slug=is.null&select=slug,name'),
+    ])
+    const latest = latestBy(prices)
+    html = page({
+      title: 'Directorio agropecuario de Panamá: ganado, cerdos, fincas y precios del día',
+      description: 'Compra y vende ganado, lechones, aves, productos agrícolas, maquinaria e insumos en Panamá. Contacto directo con productores por WhatsApp y precios del día del IMA.',
+      image: `${SITE}/logo-completo.png`, url: `${SITE}/`,
+      jsonld: [{ '@context': 'https://schema.org', '@type': 'WebSite', name: BRAND, url: SITE, inLanguage: 'es-PA',
+        potentialAction: { '@type': 'SearchAction', target: `${SITE}/buscar?q={q}`, 'query-input': 'required name=q' } },
+        { '@context': 'https://schema.org', '@type': 'Organization', name: BRAND, url: SITE, logo: `${SITE}/logo.png`, areaServed: 'PA',
+          sameAs: ['https://instagram.com/fincayapanama', 'https://facebook.com/fincayapanama'] }],
+      body: `<h1>${esc(BRAND)}: el directorio agropecuario de Panamá</h1>
+<p>Productores de todo Panamá publican gratis su ganado, cerdos, aves, cosechas, maquinaria e insumos. Los compradores contactan directo por WhatsApp, sin intermediarios.</p>
+<h2>Categorías</h2><ul>${cats.map((c) => `<li><a href="${SITE}/c/${esc(c.slug)}">${esc(c.name)} en Panamá</a></li>`).join('')}</ul>
+<h2>Precios del día en Merca Panamá</h2>${priceList(latest.slice(0, 40))}<p><a href="${SITE}/precios">Ver todos los precios del día</a></p>
+<h2>Anuncios recientes</h2><ul>${ls.map((l) => `<li><a href="${SITE}/anuncio/${esc(l.slug)}">${esc(l.title)}</a> — ${money(l.price)} / ${esc(l.unit)} (${esc(l.province)})</li>`).join('')}</ul>`,
+    })
+  }
+
+  // ---------- Precios del día ----------
+  if (path === '/precios') {
+    const rows = await q(`prices?approved=eq.true&date=gte.${daysAgo(4)}&select=product_slug,product_name,unit,price,price_min,price_max,market,date&order=date.desc&limit=3000`)
+    const byMarket = {}
+    for (const r of latestBy(rows, (x) => `${x.product_slug}|${x.market}`)) (byMarket[r.market || 'Reportes de productores'] ||= []).push(r)
+    const day = rows[0]?.date || ''
+    html = page({
+      title: `Precios agropecuarios de hoy en Panamá${day ? ` (${fmtDate(day)})` : ''}`,
+      description: `Precios mayoristas del día en Merca Panamá, Mercado de San Felipe y otros mercados: ñame, yuca, plátano, tomate, cebolla, arroz y más. Fuente: IMA. Actualizado a diario.`,
+      image: `${SITE}/logo-completo.png`, url: `${SITE}/precios`,
+      jsonld: { '@context': 'https://schema.org', '@type': 'Dataset', name: 'Precios agropecuarios diarios de Panamá', url: `${SITE}/precios`,
+        description: 'Precios mayoristas diarios por producto y mercado en Panamá.', creator: { '@type': 'Organization', name: BRAND },
+        isBasedOn: 'https://sipan.ima.gob.pa', spatialCoverage: 'Panamá', dateModified: day, license: 'https://sipan.ima.gob.pa' },
+      body: `<h1>Precios agropecuarios de hoy en Panamá</h1><p>Actualizado: ${esc(fmtDate(day))}. Fuente oficial: Instituto de Mercadeo Agropecuario (IMA).</p>
+${Object.entries(byMarket).map(([m, list]) => `<h2>${esc(m)}</h2>${priceList(list.sort((a, b) => a.product_name.localeCompare(b.product_name)))}`).join('')}`,
+    })
+  }
+
+  // ---------- Precio de un producto ----------
+  if (type === 'precios' && slug) {
+    const rows = await q(`prices?product_slug=eq.${encodeURIComponent(slug)}&approved=eq.true&date=gte.${daysAgo(60)}&select=product_name,unit,price,price_min,price_max,market,origin,source,date&order=date.desc&limit=2000`)
+    if (rows.length) {
+      const name = rows[0].product_name
+      const last = latestBy(rows, (x) => x.market || x.source)
+      const main = last.find((r) => r.market === 'Merca Panamá') || last[0]
+      const prev = rows.find((r) => r.market === main.market && r.date < main.date)
+      const chg = prev ? ((main.price - prev.price) / prev.price) * 100 : 0
+      const title = `Precio de ${name} hoy en Panamá (${fmtDate(main.date)})`
+      const description = `${name}: ${money(main.price)} por ${main.unit} en ${main.market || 'Panamá'} el ${fmtDate(main.date)}${main.price_min != null ? ` (rango ${money(main.price_min)} – ${money(main.price_max)})` : ''}. Historial de 60 días y precios por mercado. Fuente: IMA.`
+      const faq = [
+        [`¿Cuánto cuesta el ${unitWord(main.unit)} de ${name.toLowerCase()} hoy en Panamá?`, `El ${fmtDate(main.date)} el ${name.toLowerCase()} se vendió a ${money(main.price)} por ${main.unit} en promedio en ${main.market || 'Panamá'}${main.price_min != null ? `, con un rango de ${money(main.price_min)} a ${money(main.price_max)}` : ''}.`],
+        [`¿Subió o bajó el precio del ${name.toLowerCase()}?`, prev ? `Frente al ${fmtDate(prev.date)} ${chg > 0 ? `subió ${chg.toFixed(1)}%` : chg < 0 ? `bajó ${Math.abs(chg).toFixed(1)}%` : 'se mantuvo igual'}.` : 'Aún no hay un día anterior para comparar.'],
+        [`¿De dónde sale este precio?`, 'Del reporte diario de precios mayoristas del Instituto de Mercadeo Agropecuario (IMA) de Panamá, publicado en sipan.ima.gob.pa.'],
+      ]
+      html = page({
+        title, description, image: `${SITE}/logo-completo.png`, url: `${SITE}/precios/${slug}`,
+        jsonld: [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q2, a]) => ({ '@type': 'Question', name: q2, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+          { '@context': 'https://schema.org', '@type': 'Dataset', name: `Precio diario de ${name} en Panamá`, url: `${SITE}/precios/${slug}`, description,
+            isBasedOn: 'https://sipan.ima.gob.pa', spatialCoverage: 'Panamá', dateModified: main.date, creator: { '@type': 'Organization', name: BRAND } },
+          { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Precios del día', item: `${SITE}/precios` }, { '@type': 'ListItem', position: 2, name, item: `${SITE}/precios/${slug}` }] }],
+        body: `<h1>Precio de ${esc(name)} hoy en Panamá</h1>
+<p><strong>${money(main.price)}</strong> por ${esc(main.unit)} · ${esc(main.market || '')} · ${esc(fmtDate(main.date))}${prev ? ` · ${chg > 0 ? '▲' : chg < 0 ? '▼' : '='} ${Math.abs(chg).toFixed(1)}% vs. día anterior` : ''}</p>
+<h2>Precio por mercado</h2><table><tr><th>Mercado</th><th>Promedio</th><th>Mínimo</th><th>Máximo</th><th>Origen</th><th>Fecha</th></tr>
+${last.map((r) => `<tr><td>${esc(r.market || r.source)}</td><td>${money(r.price)}</td><td>${money(r.price_min)}</td><td>${money(r.price_max)}</td><td>${esc(r.origin || '')}</td><td>${esc(r.date)}</td></tr>`).join('')}</table>
+<h2>Historial (últimos 60 días)</h2><table><tr><th>Fecha</th><th>Mercado</th><th>Precio</th></tr>
+${rows.slice(0, 120).map((r) => `<tr><td>${esc(r.date)}</td><td>${esc(r.market || r.source)}</td><td>${money(r.price)} / ${esc(r.unit)}</td></tr>`).join('')}</table>
+<h2>Preguntas frecuentes</h2>${faq.map(([q2, a]) => `<h3>${esc(q2)}</h3><p>${esc(a)}</p>`).join('')}
+<p><a href="${SITE}/buscar?q=${encodeURIComponent(name)}">Ver anuncios de ${esc(name)} de productores</a> · <a href="${SITE}/precios">Todos los precios del día</a></p>`,
+      })
+    }
+  }
+
+  // ---------- Categoría (y provincia) ----------
+  if (type === 'c' && slug) {
+    const prov = path.split('/')[3]
+    const [cat] = await q(`categories?slug=eq.${encodeURIComponent(slug)}&select=slug,name`)
+    if (cat) {
+      const all = await q(`listings?status=eq.aprobado&category_slug=eq.${encodeURIComponent(slug)}&select=title,slug,price,unit,province,district,description&order=created_at.desc&limit=200`)
+      const ls = prov ? all.filter((l) => slugify(l.province) === prov) : all
+      const provName = prov ? (ls[0]?.province || prov.replace(/-/g, ' ')) : ''
+      const where = provName ? `${provName}, Panamá` : 'Panamá'
+      html = page({
+        title: `${cat.name} en venta en ${where}`,
+        description: `${ls.length} anuncios de ${cat.name.toLowerCase()} en ${where}: precios, fotos y contacto directo con productores por WhatsApp.`,
+        image: `${SITE}/logo-completo.png`, url: `${SITE}/c/${slug}${prov ? `/${prov}` : ''}`,
+        jsonld: { '@context': 'https://schema.org', '@type': 'ItemList', name: `${cat.name} en ${where}`,
+          itemListElement: ls.slice(0, 50).map((l, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/anuncio/${l.slug}`, name: l.title })) },
+        body: `<h1>${esc(cat.name)} en venta en ${esc(where)}</h1>
+<ul>${ls.map((l) => `<li><a href="${SITE}/anuncio/${esc(l.slug)}">${esc(l.title)}</a> — ${money(l.price)} / ${esc(l.unit)} · ${esc([l.district, l.province].filter(Boolean).join(', '))}</li>`).join('') || '<li>Aún no hay anuncios. Publica el tuyo gratis.</li>'}</ul>
+<p><a href="${SITE}/publicar">Publica gratis tus ${esc(cat.name.toLowerCase())}</a></p>`,
+      })
+    }
+  }
+
+  // ---------- Directorio de fincas ----------
+  if (path === '/fincas') {
+    const fs = await q('farms?select=name,slug,province,district,verified&order=verified.desc&limit=500')
+    html = page({
+      title: 'Directorio de fincas y productores de Panamá', description: `${fs.length} fincas y productores agropecuarios de Panamá con contacto directo por WhatsApp.`,
+      image: `${SITE}/logo-completo.png`, url: `${SITE}/fincas`,
+      jsonld: { '@context': 'https://schema.org', '@type': 'ItemList', name: 'Fincas de Panamá', itemListElement: fs.slice(0, 100).map((f, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/finca/${f.slug}`, name: f.name })) },
+      body: `<h1>Directorio de fincas de Panamá</h1><ul>${fs.map((f) => `<li><a href="${SITE}/finca/${esc(f.slug)}">${esc(f.name)}</a> — ${esc([f.district, f.province].filter(Boolean).join(', '))}${f.verified ? ' · verificada' : ''}</li>`).join('')}</ul>`,
+    })
   }
 
   if (!html) { res.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send('<h1>No encontrado</h1>'); return }

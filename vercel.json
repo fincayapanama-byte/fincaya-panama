@@ -1,11 +1,84 @@
 {
   "rewrites": [
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
     {
       "source": "/(anuncio|finca)/:slug",
-      "has": [{ "type": "header", "key": "user-agent", "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*" }],
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+        }
+      ],
       "destination": "/api/seo?path=/$1/:slug"
     },
-    { "source": "/((?!api/|assets/|demo/|favicon).*)", "destination": "/index.html" }
+    {
+      "source": "/precios/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+        }
+      ],
+      "destination": "/api/seo?path=/precios/:slug"
+    },
+    {
+      "source": "/c/:cat/:prov",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+        }
+      ],
+      "destination": "/api/seo?path=/c/:cat/:prov"
+    },
+    {
+      "source": "/c/:cat",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+        }
+      ],
+      "destination": "/api/seo?path=/c/:cat"
+    },
+    {
+      "source": "/(precios|fincas)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+        }
+      ],
+      "destination": "/api/seo?path=/$1"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+        }
+      ],
+      "destination": "/api/seo?path=/"
+    },
+    {
+      "source": "/((?!api/|assets/|demo/|favicon|llms\\.txt|robots\\.txt|[0-9a-f]{32}\\.txt).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/indexnow",
+      "schedule": "45 13 * * *"
+    }
   ]
 }
