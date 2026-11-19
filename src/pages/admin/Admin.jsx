@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BRAND } from '../../lib/config'
+import { composeBrandImage } from '../../lib/brandImage'
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -69,10 +70,25 @@ function Overview() {
 }
 
 const ST = ['pendiente', 'aprobado', 'rechazado', 'vendido', 'vencido']
+// Prepara la imagen con el marco de FincaYa para redes (si falla, se usa la foto original)
+async function socialImageFor(user, l) {
+  if (!l.images?.[0]) return undefined
+  try { return await api.uploadImage(user, await composeBrandImage(l.images[0])) } catch { return undefined }
+}
+
 function Listings() {
+  const { user } = useAuth()
   const [status, setStatus] = useState('pendiente')
+  const [busyId, setBusyId] = useState(null)
   const { data, reload } = useAsync(() => api.admin.listings(status), [status])
-  const act = async (l, patch) => { await api.admin.setListing(l.id, patch); reload() }
+  const act = async (l, patch) => {
+    if (busyId) return
+    setBusyId(l.id)
+    try {
+      const socialImage = patch.status === 'aprobado' ? await socialImageFor(user, l) : undefined
+      await api.admin.setListing(l.id, patch, { socialImage }); reload()
+    } finally { setBusyId(null) }
+  }
   return (
     <>
       <div className="chips">{ST.map((s) => <button key={s} className={`chip ${status === s ? 'is-on' : ''}`} onClick={() => setStatus(s)}>{s}</button>)}</div>
@@ -87,9 +103,9 @@ function Listings() {
               <td className="num">{money(l.price)}<br /><span className="muted">/{l.unit}</span></td>
               <td className="num small">{l.views} visitas<br />{l.contacts} contactos</td>
               <td className="actions">
-                {l.status !== 'aprobado' && <button className="btn btn--fill btn--xs" onClick={() => act(l, { status: 'aprobado', reject_reason: null })}>Aprobar y publicar</button>}
-                {l.status !== 'rechazado' && <button className="btn btn--ghost btn--xs" onClick={() => { const r = prompt('Motivo del rechazo (lo verá el productor):'); if (r) act(l, { status: 'rechazado', reject_reason: r }) }}>Rechazar</button>}
-                <button className="btn btn--ghost btn--xs" onClick={() => act(l, { featured: !l.featured })}>{l.featured ? 'Quitar destacado' : 'Destacar'}</button>
+                {l.status !== 'aprobado' && <button className="btn btn--fill btn--xs" disabled={!!busyId} onClick={() => act(l, { status: 'aprobado', reject_reason: null })}>{busyId === l.id ? 'Publicando… (hasta 30 s)' : 'Aprobar y publicar'}</button>}
+                {l.status !== 'rechazado' && <button className="btn btn--ghost btn--xs" disabled={!!busyId} onClick={() => { const r = prompt('Motivo del rechazo (lo verá el productor):'); if (r) act(l, { status: 'rechazado', reject_reason: r }) }}>Rechazar</button>}
+                <button className="btn btn--ghost btn--xs" disabled={!!busyId} onClick={() => act(l, { featured: !l.featured })}>{l.featured ? 'Quitar destacado' : 'Destacar'}</button>
               </td>
             </tr>
           ))}</tbody>
@@ -189,7 +205,17 @@ const PriceRows = ({ rows, reload, approve }) => (
 )
 
 function Social() {
+  const { user } = useAuth()
+  const [busyId, setBusyId] = useState(null)
   const { data, reload } = useAsync(() => api.admin.social(), [])
+  const publishNow = async (p) => {
+    if (busyId) return
+    setBusyId(p.listing_id)
+    try {
+      const full = (await api.admin.listings('aprobado')).find((l) => l.id === p.listing_id)
+      await api.admin.publishNow(p.listing_id, full ? await socialImageFor(user, full) : undefined); reload()
+    } finally { setBusyId(null) }
+  }
   if (!data) return <Loading />
   return (
     <>
@@ -201,7 +227,7 @@ function Social() {
             <td><Link to={`/anuncio/${p.listing?.slug}`}>{p.listing?.title}</Link><br /><Ago iso={p.created_at} /></td>
             <td><span className={`net net--${p.network}`}>{p.network}</span></td>
             <td><span className={`status status--${p.status === 'publicado' ? 'aprobado' : p.status === 'error' ? 'rechazado' : 'pendiente'}`}>{p.status}</span>{p.error && <><br /><span className="down small">{p.error}</span></>}</td>
-            <td>{p.status !== 'publicado' ? <button className="btn btn--fill btn--xs" onClick={() => api.admin.publishNow(p.listing_id).then(reload)}>Publicar ahora</button> : p.permalink && <a href={p.permalink} target="_blank" rel="noopener">Ver post</a>}</td>
+            <td>{p.status !== 'publicado' ? <button className="btn btn--fill btn--xs" disabled={!!busyId} onClick={() => publishNow(p)}>{busyId === p.listing_id ? 'Publicando…' : 'Publicar ahora'}</button> : p.permalink && <a href={p.permalink} target="_blank" rel="noopener">Ver post</a>}</td>
           </tr>
         ))}</tbody>
       </table></div>
@@ -262,6 +288,7 @@ function BrandPosts() {
   const hist = useAsync(() => api.admin.brandPosts(), [])
   const [text, setText] = useState(TEMPLATES[0].text)
   const [img, setImg] = useState('')
+  const [useFrame, setUseFrame] = useState(true)
   const [nets, setNets] = useState({ facebook: true, instagram: true })
   const [busy, setBusy] = useState(false)
   const [up, setUp] = useState(false)
@@ -269,10 +296,13 @@ function BrandPosts() {
   const networks = Object.keys(nets).filter((k) => nets[k])
   const upload = async (e) => {
     const f = e.target.files?.[0]; if (!f) return
-    setUp(true); try { setImg(await api.uploadImage(user, f)) } finally { setUp(false); e.target.value = '' }
+    setUp(true)
+    try { setImg(await api.uploadImage(user, useFrame ? await composeBrandImage(f) : f)) }
+    catch (err) { alert(err.message || 'No se pudo preparar la imagen') }
+    finally { setUp(false); e.target.value = '' }
   }
   const publish = async () => {
-    if (!confirm(`Se publicará ahora en: ${networks.join(' y ')}. ¿Continuar?`)) return
+    if (busy || !confirm(`Se publicará ahora en: ${networks.join(' y ')}. ¿Continuar?`)) return
     setBusy(true); setRes(null)
     try { setRes((await api.admin.publishBrand({ message: text, image_url: img || null, networks })).results) ; hist.reload() }
     catch (err) { setRes({ error: err.message || String(err) }) } finally { setBusy(false) }
@@ -284,7 +314,8 @@ function BrandPosts() {
       <div className="brand-grid">
         <div className="card form-card form">
           <Field label={`Texto (${text.length}/2200)`}><textarea rows="14" maxLength={2200} value={text} onChange={(e) => setText(e.target.value)} /></Field>
-          <Field label="Imagen" hint="Fotos reales del agro o piezas hechas en Canva."><input type="file" accept="image/*" onChange={upload} disabled={up} /></Field>
+          <label className="check"><input type="checkbox" checked={useFrame} onChange={(e) => setUseFrame(e.target.checked)} /> Usar el marco de FincaYa Panamá (se aplica al subir la foto)</label>
+          <Field label="Imagen" hint="Foto real del agro. Con el marco queda cuadrada 1080×1080."><input type="file" accept="image/*" onChange={upload} disabled={up} /></Field>
           <div className="chips">
             {['facebook', 'instagram'].map((n) => (
               <label key={n} className="check"><input type="checkbox" checked={nets[n]} onChange={(e) => setNets({ ...nets, [n]: e.target.checked })} /> {n === 'facebook' ? 'Facebook' : 'Instagram'}</label>

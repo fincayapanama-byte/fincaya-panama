@@ -57,13 +57,35 @@ export function Login() {
 function FarmForm({ user, farm, onSaved }) {
   const [f, setF] = useState(farm || { name: '', province: 'Coclé', district: '', address: '', whatsapp: user.whatsapp || '', phone: '', email: user.email || '', instagram: '', tiktok: '', facebook: '', website: '', description: '' })
   const [busy, setBusy] = useState(false)
+  const [up, setUp] = useState('')
+  const [err, setErr] = useState('')
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  const photo = (k) => async (e) => {
+    const file = e.target.files?.[0]; if (!file) return
+    setUp(k)
+    try { const url = await api.uploadImage(user, file); setF((x) => ({ ...x, [k]: url })) }
+    catch (er) { setErr(er.message || 'No se pudo subir la imagen') }
+    finally { setUp(''); e.target.value = '' }
+  }
   const submit = async (e) => {
-    e.preventDefault(); setBusy(true)
-    try { onSaved(await api.saveFarm(user, { ...f, whatsapp: f.whatsapp.replace(/\D/g, '').replace(/^(\d{8})$/, '507$1') })) } finally { setBusy(false) }
+    e.preventDefault(); setBusy(true); setErr('')
+    try { onSaved(await api.saveFarm(user, { ...f, whatsapp: (f.whatsapp || '').replace(/\D/g, '').replace(/^(\d{8})$/, '507$1') })) }
+    catch (er) { setErr(er.message || 'No se pudo guardar la finca') }
+    finally { setBusy(false) }
   }
   return (
     <form onSubmit={submit} className="form form--2">
+      <div className="farm-images">
+        <label className="logo-up" title="Logo de la finca">
+          {f.logo_url ? <img src={f.logo_url} alt="Logo" /> : <span>{up === 'logo_url' ? 'Subiendo…' : '+ Logo'}</span>}
+          <input type="file" accept="image/*" onChange={photo('logo_url')} hidden />
+        </label>
+        <label className="cover-up" title="Foto de portada" style={f.cover_url ? { backgroundImage: `url(${f.cover_url})` } : undefined}>
+          {!f.cover_url && <span>{up === 'cover_url' ? 'Subiendo…' : '+ Foto de portada (la finca, los animales o el cultivo)'}</span>}
+          {f.cover_url && <span className="cover-up__change">Cambiar portada</span>}
+          <input type="file" accept="image/*" onChange={photo('cover_url')} hidden />
+        </label>
+      </div>
       <Field label="Nombre de la finca"><input required value={f.name} onChange={set('name')} /></Field>
       <Field label="Provincia"><select value={f.province} onChange={set('province')}>{PROVINCES.map((p) => <option key={p}>{p}</option>)}</select></Field>
       <Field label="Distrito"><input value={f.district || ''} onChange={set('district')} /></Field>
@@ -75,7 +97,8 @@ function FarmForm({ user, farm, onSaved }) {
       <Field label="Facebook (usuario de página)"><input value={f.facebook || ''} onChange={set('facebook')} /></Field>
       <Field label="Sitio web"><input value={f.website || ''} onChange={set('website')} placeholder="https://" /></Field>
       <Field label="Descripción" hint="Rubros, razas, años de experiencia, si haces entregas."><textarea rows="4" value={f.description || ''} onChange={set('description')} /></Field>
-      <div className="form__actions"><button className="btn btn--fill" disabled={busy}>{busy ? 'Guardando…' : 'Guardar finca'}</button></div>
+      {err && <p className="notice form__actions">{err}</p>}
+      <div className="form__actions"><button className="btn btn--fill" disabled={busy || !!up}>{busy ? 'Guardando…' : 'Guardar finca'}</button></div>
     </form>
   )
 }
@@ -104,7 +127,7 @@ export function Publish() {
       <Seo title="Registra tu finca" />
       <h1 className="h1">Paso 1: registra tu finca</h1>
       <p className="lead">Solo una vez. Luego publicas todos los productos que quieras.</p>
-      <div className="card form-card"><FarmForm user={user} onSaved={() => farmQ.reload()} /></div>
+      <div className="card form-card"><FarmForm user={user} onSaved={() => { farmQ.reload(); window.scrollTo(0, 0) }} /></div>
     </div>
   )
   const farm = farmQ.data
@@ -189,11 +212,14 @@ const STATUS = { pendiente: 'En revisión', aprobado: 'Publicado', rechazado: 'R
 
 function MyListings({ user }) {
   const { data, reload } = useAsync(() => api.myListings(user), [user.id])
-  const published = new URLSearchParams(location.search).get('publicado')
+  const qs = new URLSearchParams(location.search)
+  const published = qs.get('publicado')
+  const farmSaved = qs.get('finca')
   if (!data) return <Loading />
   const total = (k) => data.reduce((s, l) => s + (l[k] || 0), 0)
   return (
     <>
+      {farmSaved && <p className="notice notice--ok">✅ Finca guardada. Ya puedes <Link to="/publicar">publicar tu primer anuncio</Link>.</p>}
       {published && <p className="notice notice--ok">¡Listo! Tu anuncio está en revisión. Te avisaremos cuando se publique.</p>}
       <div className="kpis">
         <div className="kpi"><span>Anuncios activos</span><strong>{data.filter((l) => l.status === 'aprobado').length}</strong></div>
@@ -246,13 +272,12 @@ function MyComments({ user }) {
 
 function MyFarm({ user }) {
   const q = useAsync(() => api.myFarm(user), [user.id])
-  const [saved, setSaved] = useState(false)
+  const nav = useNavigate()
   if (q.loading) return <Loading />
   return (
     <div className="card form-card">
       {q.data && <p className="muted">Tu página pública: <Link to={`/finca/${q.data.slug}`}>/finca/{q.data.slug}</Link> {q.data.verified ? '· ✔ Verificada' : '· Pide la verificación por WhatsApp para recibir el sello.'}</p>}
-      {saved && <p className="notice notice--ok">Finca guardada.</p>}
-      <FarmForm user={user} farm={q.data} onSaved={() => { setSaved(true); q.reload() }} />
+      <FarmForm user={user} farm={q.data} onSaved={() => nav('/panel?finca=1')} />
     </div>
   )
 }

@@ -283,7 +283,7 @@ export const api = {
       if (status) q = q.eq('status', status)
       return ok(await q)
     },
-    async setListing(id, patch) {
+    async setListing(id, patch, { socialImage } = {}) {
       if (patch.status === 'aprobado') patch.approved_at = new Date().toISOString()
       if (DEMO) {
         const db = load(); const l = db.listings.find((x) => x.id === id); Object.assign(l, patch)
@@ -292,7 +292,7 @@ export const api = {
         save(); return
       }
       ok(await supabase.from('listings').update(patch).eq('id', id))
-      if (patch.status === 'aprobado') await supabase.functions.invoke('publish-social', { body: { listing_id: id } }).catch(() => {})
+      if (patch.status === 'aprobado') await supabase.functions.invoke('publish-social', { body: { listing_id: id, image_url: socialImage } }).catch(() => {})
     },
     async users() {
       if (DEMO) return load().profiles
@@ -347,9 +347,9 @@ export const api = {
       if (DEMO) { const db = load(); return db.social_posts.map((p) => ({ ...p, listing: db.listings.find((l) => l.id === p.listing_id) })).sort((a, b) => b.created_at.localeCompare(a.created_at)) }
       return ok(await supabase.from('social_posts').select('*, listing:listings(title, slug)').order('created_at', { ascending: false }))
     },
-    async publishNow(listingId) {
+    async publishNow(listingId, socialImage) {
       if (DEMO) { load().social_posts.filter((p) => p.listing_id === listingId).forEach((p) => { p.status = 'publicado'; p.permalink = '#' }); save(); return }
-      ok(await supabase.functions.invoke('publish-social', { body: { listing_id: listingId } }))
+      ok(await supabase.functions.invoke('publish-social', { body: { listing_id: listingId, image_url: socialImage } }))
     },
     async brandPosts() {
       if (DEMO) return load().brand_posts || []

@@ -256,7 +256,7 @@ export function ListingPage() {
           <a className="btn btn--wa btn--block" href={waLink(f.whatsapp, text)} target="_blank" rel="noopener" onClick={contact}>Contactar por WhatsApp</a>
           {f.phone && <a className="btn btn--ghost btn--block" href={`tel:${f.phone}`} onClick={contact}>Llamar</a>}
           <Link to={`/finca/${f.slug}`} className="farmmini">
-            <span className="farmmini__avatar">{(f.name || '?').slice(0, 1)}</span>
+            {f.logo_url ? <img className="farmmini__avatar" src={f.logo_url} alt="" /> : <span className="farmmini__avatar">{(f.name || '?').slice(0, 1)}</span>}
             <span><strong>{f.name}</strong> {f.verified && <Verified />}<br /><span className="muted">{[f.district, f.province].filter(Boolean).join(', ')} · Ver finca →</span></span>
           </Link>
           <div className="safety">
@@ -281,7 +281,7 @@ export function FarmPage() {
   if (!f) return <NotFound />
   const jsonld = {
     '@context': 'https://schema.org', '@type': 'LocalBusiness', name: f.name, description: f.description, url: `${BRAND.url}/finca/${f.slug}`,
-    telephone: f.phone, email: f.email, image: f.cover_url,
+    telephone: f.phone, email: f.email, image: f.cover_url, logo: f.logo_url,
     address: { '@type': 'PostalAddress', streetAddress: f.address, addressLocality: f.district, addressRegion: f.province, addressCountry: 'PA' },
     ...(f.lat && { geo: { '@type': 'GeoCoordinates', latitude: f.lat, longitude: f.lng } }),
     sameAs: [f.website, f.instagram && `https://instagram.com/${f.instagram}`, f.tiktok && `https://tiktok.com/@${f.tiktok}`, f.facebook && `https://facebook.com/${f.facebook}`].filter(Boolean),
@@ -291,6 +291,7 @@ export function FarmPage() {
       <Seo title={`${f.name} — ${f.district ? `${f.district}, ` : ''}${f.province}`} description={(f.description || '').slice(0, 158)} jsonld={jsonld} />
       <section className="farmhero" style={f.cover_url ? { backgroundImage: `linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.65)),url(${f.cover_url})` } : undefined}>
         <div className="wrap">
+          {f.logo_url && <img className="farmhero__logo" src={f.logo_url} alt={`Logo de ${f.name}`} />}
           <p className="eyebrow">{[f.district, f.province].filter(Boolean).join(', ')}</p>
           <h1 className="display display--md">{f.name}</h1>
           {f.verified && <span className="tag tag--light">✔ Finca verificada</span>}

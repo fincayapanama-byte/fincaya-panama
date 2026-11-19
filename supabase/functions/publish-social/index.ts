@@ -84,11 +84,22 @@ Deno.serve(async (req) => {
       `\n📲 Contacta directo al productor: ${url}`,
       `\n#FincaYaPanamá #AgroPanamá #ProductoresPanameños #${tag(l.province)} #${tag(l.category?.name)}`,
     ].join('\n')
-    const image = l.images?.[0]
+    // Imagen con el marco de FincaYa (solo se acepta si viene de nuestro Storage)
+    const framed = typeof body.image_url === 'string' && body.image_url.startsWith(env('SUPABASE_URL')) ? body.image_url : null
+    const image = framed || l.images?.[0]
     const results: Record<string, unknown> = {}
 
+    // Candado: cada anuncio se publica UNA sola vez por red, aunque se pulse varias veces
+    const claim = async (network: string) => {
+      const ins = await db.from('social_posts').upsert({ listing_id, network, status: 'publicando' }, { onConflict: 'listing_id,network', ignoreDuplicates: true }).select('id')
+      if (ins.data?.length) return true
+      const upd = await db.from('social_posts').update({ status: 'publicando', error: null }).eq('listing_id', listing_id).eq('network', network).in('status', ['pendiente', 'error']).select('id')
+      return !!upd.data?.length
+    }
+
     // Facebook (página)
-    try {
+    if (!(await claim('facebook'))) results.facebook = 'ya publicado o en proceso'
+    else try {
       const fb = image
         ? await graph(`${env('META_PAGE_ID')}/photos`, { url: image, caption })
         : await graph(`${env('META_PAGE_ID')}/feed`, { message: caption, link: url })
@@ -101,7 +112,9 @@ Deno.serve(async (req) => {
     }
 
     // Instagram (requiere imagen JPG pública)
-    if (image && env('META_IG_USER_ID')) {
+    if (image && env('META_IG_USER_ID') && !(await claim('instagram'))) {
+      results.instagram = 'ya publicado o en proceso'
+    } else if (image && env('META_IG_USER_ID')) {
       try {
         const container = await graph(`${env('META_IG_USER_ID')}/media`, { image_url: image, caption })
         // Esperar a que Instagram procese la imagen
