@@ -416,3 +416,54 @@ img, video, iframe { max-width: 100%; }
 .pitch .btn + .btn { margin-left: 8px; }
 @media (max-width: 600px) { .pp-price { font-size: 30px; } .pp-hero { flex-direction: column; align-items: flex-start; } .pp-chg { justify-items: start; } }
 .pitch .h2 { color: #fff; }
+
+/* ===== Formulario de finca: actividades y ubicación ===== */
+.form__full { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; }
+.field__label { font-size: 14px; font-weight: 600; margin: 0; }
+.chips--wrap { flex-wrap: wrap; margin: 0; }
+.loc-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.leaflet-box { width: 100%; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); z-index: 0; }
+
+/* Recorte de fotos */
+.cropper { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.6); display: grid; place-items: center; padding: 16px; }
+.cropper__card { width: min(600px, 100%); padding: 18px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.cropper__title { font: 700 18px var(--display, inherit); margin: 0; align-self: flex-start; }
+.cropper .muted { align-self: flex-start; margin: 0; }
+.cropper__frame { position: relative; overflow: hidden; border-radius: 12px; background: #222; touch-action: none; cursor: grab; user-select: none; }
+.cropper__frame:active { cursor: grabbing; }
+.cropper__frame img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; pointer-events: none; }
+.cropper__frame.is-round::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0,0,0,.45); pointer-events: none; }
+.cropper__zoom { width: 100%; accent-color: var(--green, #0B5D3B); }
+.cropper__actions { display: flex; gap: 10px; justify-content: flex-end; width: 100%; }
+
+/* ===== Mapa de fincas ===== */
+.mapbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 12px; }
+.mapbar .inline-select { margin: 0; }
+.mapwrap { position: relative; }
+.mapcount { position: absolute; left: 12px; bottom: 12px; z-index: 500; background: rgba(255,255,255,.95); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.chips--scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0; padding-bottom: 2px; }
+.chips--scroll::-webkit-scrollbar { display: none; }
+.chips--scroll .chip { flex: none; }
+.pin { background: none; border: 0; }
+.pin span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: #fff; border: 3px solid var(--c); box-shadow: 0 3px 8px rgba(0,0,0,.3); }
+.pin span i { transform: rotate(45deg); font-style: normal; font-size: 19px; line-height: 1; }
+.mpop { display: flex; gap: 10px; align-items: flex-start; font: 14px/1.4 Inter, sans-serif; min-width: 200px; }
+.mpop img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; flex: none; border: 1px solid #eee; }
+.mpop strong { font-size: 15px; }
+.mpop__v { color: #16803C; font-weight: 700; }
+.mpop__acts { font-size: 12.5px; color: #555; }
+.mpop a { display: inline-block; margin-top: 6px; font-weight: 700; color: #0B5D3B; }
+.lcard__img--wide { aspect-ratio: 16/9; }
+
+/* ===== Filtros del directorio en celular ===== */
+.mfilters { display: none; }
+@media (max-width: 960px) {
+  .mfilters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; position: sticky; top: 64px; z-index: 30; background: var(--paper, #F5F1E6); padding: 8px 0; }
+  .mfilters .chips--scroll { margin: 0 -16px; padding: 0 16px 2px; }
+  .mfilters__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mfilters__row select { min-height: 42px; }
+  .search-layout > .filters { display: none; }
+  .mapbar { flex-direction: column; align-items: stretch; }
+  .mapbar .chips--scroll { margin: 0 -16px; padding: 0 16px 2px; }
+  .mapbar .inline-select { max-width: none; }
+}

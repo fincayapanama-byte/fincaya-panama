@@ -4,6 +4,8 @@ import { api } from '../lib/api'
 import { useAsync } from '../lib/useAsync'
 import { BRAND, PROVINCES, money, slugify, waLink } from '../lib/config'
 import { IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, handle } from '../components/icons'
+import { FarmsMap } from '../components/FarmMap'
+import { ACTIVITIES, PROVINCE_CENTER, activity } from '../lib/geo'
 import { AdSlot, Ago, FavButton, Grid, Loading, PriceTable, Seo, Sparkline, Verified, ListingCard } from '../components/ui'
 
 // Ordena el resumen de precios. En alza/baja, lo más reciente va primero ante empates.
@@ -121,6 +123,11 @@ export function Home() {
       </section>
 
       <section className="wrap section">
+        <div className="section__head"><h2>Fincas cerca de ti</h2><Link className="more" to="/mapa">Abrir mapa <IcoArrow /></Link></div>
+        <FarmsMapPage embedded />
+      </section>
+
+      <section className="wrap section">
         <div className="section__head"><h2>Precios del día</h2><Link className="more" to="/precios">Ver todos <IcoArrow /></Link></div>
         <div className="chips" role="tablist">
           {[['alza', '▲ Mayores alzas'], ['baja', '▼ Mayores bajas'], ['destacados', 'Destacados']].map(([k, t]) => (
@@ -196,12 +203,33 @@ export function Search() {
   }
   const roots = (cats.data || []).filter((c) => !c.parent_slug)
   const kids = (slug) => (cats.data || []).filter((c) => c.parent_slug === slug)
+  const rootSel = catObj ? (catObj.parent_slug || catObj.slug) : ''
 
   return (
     <div className="wrap section">
       <Seo title={title} description={`${title}: anuncios de productores en Panamá con precio, ubicación y contacto por WhatsApp.`} />
       <nav className="crumbs"><Link to="/">Inicio</Link> / <Link to="/buscar">Directorio</Link>{catObj && <> / {catObj.name}</>}</nav>
       <h1 className="h1">{title}</h1>
+      {/* Filtros compactos para celular */}
+      <div className="mfilters">
+        <div className="chips chips--scroll">
+          <button className={`chip ${!cat ? 'is-on' : ''}`} onClick={() => go('', province)}>Todas</button>
+          {roots.map((r) => <button key={r.slug} className={`chip ${rootSel === r.slug ? 'is-on' : ''}`} onClick={() => go(r.slug, province)}>{r.name}</button>)}
+        </div>
+        {rootSel && kids(rootSel).length > 0 && (
+          <div className="chips chips--scroll">
+            {kids(rootSel).map((k) => <button key={k.slug} className={`chip chip--sm ${cat === k.slug ? 'is-on' : ''}`} onClick={() => go(k.slug, province)}>{k.name}</button>)}
+          </div>
+        )}
+        <div className="mfilters__row">
+          <select value={province} onChange={(e) => go(cat, e.target.value)} aria-label="Provincia">
+            <option value="">Todo Panamá</option>{PROVINCES.map((p) => <option key={p}>{p}</option>)}
+          </select>
+          <select value={sort} onChange={(e) => { sp.set('orden', e.target.value); setSp(sp) }} aria-label="Ordenar">
+            <option value="recent">Más recientes</option><option value="price">Menor precio</option>
+          </select>
+        </div>
+      </div>
       <div className="search-layout">
         <aside className="filters card">
           <p className="filters__h">Categoría</p>
@@ -358,10 +386,53 @@ export function FarmPage() {
             {f.website && <a className="social__btn" href={f.website} target="_blank" rel="noopener" aria-label="Sitio web" title="Sitio web"><IcoGlobe /></a>}
             {f.email && <a className="social__btn" href={`mailto:${f.email}`} aria-label="Correo" title={f.email}><IcoMail /></a>}
           </div>
-          {f.lat && <iframe title={`Mapa de ${f.name}`} className="map" loading="lazy" src={`https://www.google.com/maps?q=${f.lat},${f.lng}&z=13&output=embed`} />}
+          {f.lat && <>
+            <iframe title={`Mapa de ${f.name}`} className="map" loading="lazy" src={`https://www.google.com/maps?q=${f.lat},${f.lng}&z=13&output=embed`} />
+            <a className="btn btn--ghost btn--block" href={`https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}`} target="_blank" rel="noopener">🧭 Cómo llegar</a>
+          </>}
         </aside>
       </div>
     </>
+  )
+}
+
+// ================================ MAPA DE FINCAS ================================
+export function FarmsMapPage({ embedded = false }) {
+  const nav = useNavigate()
+  const { data } = useAsync(() => api.mapFarms(), [])
+  const [acts, setActs] = useState([])
+  const [prov, setProv] = useState('')
+  const farms = useMemo(() => (data || []).filter((f) =>
+    (!acts.length || (f.activities || []).some((a) => acts.includes(a))) && (!prov || f.province === prov)), [data, acts, prov])
+  const focus = useMemo(() => (prov && PROVINCE_CENTER[prov] ? { center: PROVINCE_CENTER[prov], zoom: 9 } : null), [prov])
+  const present = ACTIVITIES.filter((a) => (data || []).some((f) => (f.activities || []).includes(a.slug)))
+  const toggle = (s) => setActs((x) => (x.includes(s) ? x.filter((y) => y !== s) : [...x, s]))
+  // Los enlaces del globo del mapa navegan dentro de la app
+  const onClick = (e) => { const a = e.target.closest('a[data-link]'); if (a) { e.preventDefault(); nav(a.getAttribute('href')) } }
+  const Wrap = embedded ? 'div' : 'div'
+  return (
+    <Wrap className={embedded ? '' : 'wrap section'}>
+      {!embedded && <>
+        <Seo title="Mapa de fincas de Panamá" description="Mapa de fincas porcinas, ganaderas, avícolas y agrícolas de Panamá. Busca productores por zona y contáctalos directo." />
+        <nav className="crumbs"><Link to="/">Inicio</Link> / <Link to="/fincas">Fincas</Link> / Mapa</nav>
+        <h1 className="h1">Mapa de fincas</h1>
+        <p className="lead">Encuentra productores cerca de ti. Toca un ícono para ver la finca y escribirle.</p>
+      </>}
+      <div className="mapbar">
+        <div className="chips chips--scroll">
+          <button className={`chip ${!acts.length ? 'is-on' : ''}`} onClick={() => setActs([])}>Todas</button>
+          {(present.length ? present : ACTIVITIES).map((a) => <button key={a.slug} className={`chip ${acts.includes(a.slug) ? 'is-on' : ''}`} onClick={() => toggle(a.slug)}>{a.icon} {a.name}</button>)}
+        </div>
+        <select className="inline-select" value={prov} onChange={(e) => setProv(e.target.value)} aria-label="Provincia">
+          <option value="">Todo Panamá</option>{PROVINCES.map((p) => <option key={p}>{p}</option>)}
+        </select>
+      </div>
+      <div onClick={onClick} className="mapwrap">
+        <FarmsMap farms={farms} focus={focus} height={embedded ? 440 : 'min(70vh, 640px)'} />
+        {data && <span className="mapcount">{farms.length} finca{farms.length === 1 ? '' : 's'} en el mapa</span>}
+      </div>
+      {!embedded && <p className="muted small">¿Tu finca no aparece? <Link to="/panel/finca">Marca su ubicación en tu panel</Link> o <Link to="/publicar">regístrala gratis</Link>.</p>}
+    </Wrap>
   )
 }
 
@@ -371,7 +442,7 @@ export function Farms() {
   return (
     <div className="wrap section">
       <Seo title="Directorio de fincas de Panamá" description="Fincas y productores agropecuarios de Panamá por provincia: porcinos, ganado, aves y cultivos." />
-      <h1 className="h1">Directorio de fincas</h1>
+      <div className="section__head"><h1 className="h1" style={{ margin: 0 }}>Directorio de fincas</h1><Link className="more" to="/mapa">Ver en el mapa <IcoArrow /></Link></div>
       <select className="inline-select" value={prov} onChange={(e) => setProv(e.target.value)}>
         <option value="">Todas las provincias</option>{PROVINCES.map((p) => <option key={p}>{p}</option>)}
       </select>
@@ -379,7 +450,7 @@ export function Farms() {
         <div className="grid">
           {data.map((f) => (
             <Link key={f.id} to={`/finca/${f.slug}`} className="card lcard">
-              <div className="lcard__img" style={f.cover_url ? { backgroundImage: `url(${f.cover_url})` } : undefined}>{!f.cover_url && <span className="lcard__noimg">{f.name}</span>}</div>
+              <div className="lcard__img lcard__img--wide" style={f.cover_url ? { backgroundImage: `url(${f.cover_url})` } : undefined}>{!f.cover_url && <span className="lcard__noimg">{f.name}</span>}</div>
               <div className="lcard__body">
                 <h3 className="lcard__title">{f.name} {f.verified && <Verified />}</h3>
                 <p className="lcard__meta">{[f.district, f.province].filter(Boolean).join(', ')}</p>

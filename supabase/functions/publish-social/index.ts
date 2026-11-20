@@ -16,8 +16,21 @@ const money = (n: number | null) => (n == null ? 'Consultar' : `B/. ${Number(n).
 // Instagram no permite enlaces clicables en el texto: cambiamos la URL por "enlace en la bio"
 const igText = (t: string) => t.replace(/https?:\/\/(www\.)?fincayapanama\.com\S*/g, 'fincayapanama.com 🔗 (enlace en nuestra bio)')
 
+// Acepta un token de página o un token de usuario del sistema (no vence): con este último
+// se pide el token de la página a Meta en cada arranque.
+let pageToken = ''
+async function token() {
+  if (pageToken) return pageToken
+  const t = env('META_PAGE_TOKEN')
+  try {
+    const r = await (await fetch(`${GRAPH}/${env('META_PAGE_ID')}?fields=access_token&access_token=${t}`)).json()
+    pageToken = r.access_token || t
+  } catch { pageToken = t }
+  return pageToken
+}
+
 async function graph(path: string, params: Record<string, string>) {
-  const body = new URLSearchParams({ ...params, access_token: env('META_PAGE_TOKEN') })
+  const body = new URLSearchParams({ ...params, access_token: await token() })
   const r = await fetch(`${GRAPH}/${path}`, { method: 'POST', body })
   const j = await r.json()
   if (!r.ok || j.error) throw new Error(j.error?.message || `Graph ${r.status}`)
@@ -55,13 +68,13 @@ Deno.serve(async (req) => {
           try {
             const c = await graph(`${env('META_IG_USER_ID')}/media`, { image_url, caption: igText(message) })
             for (let i = 0; i < 10; i++) {
-              const s = await (await fetch(`${GRAPH}/${c.id}?fields=status_code&access_token=${env('META_PAGE_TOKEN')}`)).json()
+              const s = await (await fetch(`${GRAPH}/${c.id}?fields=status_code&access_token=${await token()}`)).json()
               if (s.status_code === 'FINISHED') break
               if (s.status_code === 'ERROR') throw new Error('Instagram no pudo procesar la imagen (usa JPG)')
               await new Promise((r) => setTimeout(r, 1500))
             }
             const pub = await graph(`${env('META_IG_USER_ID')}/media_publish`, { creation_id: c.id })
-            const pl = await (await fetch(`${GRAPH}/${pub.id}?fields=permalink&access_token=${env('META_PAGE_TOKEN')}`)).json()
+            const pl = await (await fetch(`${GRAPH}/${pub.id}?fields=permalink&access_token=${await token()}`)).json()
             results.instagram = `publicado ${pl.permalink || ''}`.trim()
           } catch (e) { results.instagram = `error: ${String(e)}` }
         }
@@ -122,13 +135,13 @@ Deno.serve(async (req) => {
         const container = await graph(`${env('META_IG_USER_ID')}/media`, { image_url: image, caption: igText(caption) })
         // Esperar a que Instagram procese la imagen
         for (let i = 0; i < 10; i++) {
-          const s = await (await fetch(`${GRAPH}/${container.id}?fields=status_code&access_token=${env('META_PAGE_TOKEN')}`)).json()
+          const s = await (await fetch(`${GRAPH}/${container.id}?fields=status_code&access_token=${await token()}`)).json()
           if (s.status_code === 'FINISHED') break
           if (s.status_code === 'ERROR') throw new Error('Instagram no pudo procesar la imagen')
           await new Promise((r) => setTimeout(r, 1500))
         }
         const pub = await graph(`${env('META_IG_USER_ID')}/media_publish`, { creation_id: container.id })
-        const pl = await (await fetch(`${GRAPH}/${pub.id}?fields=permalink&access_token=${env('META_PAGE_TOKEN')}`)).json()
+        const pl = await (await fetch(`${GRAPH}/${pub.id}?fields=permalink&access_token=${await token()}`)).json()
         await db.from('social_posts').upsert({ listing_id, network: 'instagram', status: 'publicado', external_id: pub.id, permalink: pl.permalink || null, error: null }, { onConflict: 'listing_id,network' })
         results.instagram = 'publicado'
       } catch (e) {

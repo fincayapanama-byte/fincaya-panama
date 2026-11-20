@@ -152,6 +152,24 @@ export const api = {
     f.listings = ok(await supabase.from('listings').select(SEL).eq('farm_id', f.id).eq('status', 'aprobado').order('created_at', { ascending: false }))
     return f
   },
+  // Fincas con ubicación para el mapa. Si la finca no marcó actividades, se deducen de sus anuncios.
+  async mapFarms() {
+    const cats = await api.categories()
+    const rootOf = (slug) => { const c = cats.find((x) => x.slug === slug); return c?.parent_slug || slug }
+    let farms, ls
+    if (DEMO) {
+      const db = load(); farms = db.farms.filter((f) => f.lat != null && f.show_on_map !== false)
+      ls = db.listings.filter((l) => l.status === 'aprobado')
+    } else {
+      farms = ok(await supabase.from('farms').select('id,slug,name,lat,lng,district,province,logo_url,verified,activities,show_on_map').not('lat', 'is', null)) || []
+      farms = farms.filter((f) => f.show_on_map !== false)
+      ls = ok(await supabase.from('listings').select('farm_id,category_slug').eq('status', 'aprobado')) || []
+    }
+    return farms.map((f) => {
+      const fromListings = [...new Set(ls.filter((l) => l.farm_id === f.id).map((l) => rootOf(l.category_slug)))]
+      return { ...f, activities: f.activities?.length ? f.activities : fromListings }
+    })
+  },
   async farms({ province } = {}) {
     if (DEMO) return load().farms.filter((f) => !province || f.province === province)
     let qb = supabase.from('farms').select('*').order('verified', { ascending: false }).order('created_at', { ascending: false })
@@ -231,7 +249,8 @@ export const api = {
     return ok(await supabase.from('farms').select('*').eq('owner_id', user.id).maybeSingle())
   },
   async saveFarm(user, farm) {
-    const row = { ...farm, owner_id: user.id, slug: farm.slug || `${slugify(farm.name)}-${Math.random().toString(36).slice(2, 6)}` }
+    const { listings: _l, ...clean } = farm
+    const row = { ...clean, owner_id: user.id, slug: farm.slug || `${slugify(farm.name)}-${Math.random().toString(36).slice(2, 6)}` }
     if (DEMO) {
       const db = load(); const i = db.farms.findIndex((f) => f.id === farm.id)
       if (i >= 0) db.farms[i] = { ...db.farms[i], ...row }

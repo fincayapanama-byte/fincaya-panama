@@ -1,7 +1,7 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Header, Footer } from './components/ui'
-import { Home, Search, ListingPage, FarmPage, Farms, Prices, ProductPrice, Safety, Privacy, NotFound } from './pages/public'
+import { Home, Search, ListingPage, FarmPage, Farms, FarmsMapPage, Prices, ProductPrice, Safety, Privacy, NotFound } from './pages/public'
 import { Login, Publish, Dashboard } from './pages/account'
 import Admin from './pages/admin/Admin'
 
@@ -20,6 +20,7 @@ export default function App() {
           <Route path="/anuncio/:slug" element={<ListingPage />} />
           <Route path="/finca/:slug" element={<FarmPage />} />
           <Route path="/fincas" element={<Farms />} />
+          <Route path="/mapa" element={<FarmsMapPage />} />
           <Route path="/precios" element={<Prices />} />
           <Route path="/precios/:slug" element={<ProductPrice />} />
           <Route path="/seguridad" element={<Safety />} />

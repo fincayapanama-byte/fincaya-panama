@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   for (const p of prices) if (!lastBySlug[p.product_slug]) lastBySlug[p.product_slug] = p.date
   const urls = [
     { loc: `${SITE}/`, freq: 'daily' }, { loc: `${SITE}/precios`, lastmod: prices[0]?.date, freq: 'daily' },
-    { loc: `${SITE}/buscar`, freq: 'daily' }, { loc: `${SITE}/fincas`, freq: 'weekly' },
+    { loc: `${SITE}/buscar`, freq: 'daily' }, { loc: `${SITE}/fincas`, freq: 'weekly' }, { loc: `${SITE}/mapa`, freq: 'weekly' },
     ...cats.map((c) => ({ loc: `${SITE}/c/${c.slug}`, freq: 'daily' })),
     ...[...new Set(listings.map((l) => `${l.category_slug}/${slugify(l.province)}`))].map((k) => ({ loc: `${SITE}/c/${k}`, freq: 'daily' })),
     ...Object.entries(lastBySlug).map(([slug, date]) => ({ loc: `${SITE}/precios/${slug}`, lastmod: date, freq: 'daily' })),

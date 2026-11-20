@@ -270,12 +270,12 @@ export const farms = [
     address: 'Vía a Las Minas, Santa Cruz', lat: 8.652317, lng: -80.354509, whatsapp: '50760359444', phone: '+507 6035-9444',
     email: 'navasfinca@gmail.com', instagram: 'fincanavas_panama', tiktok: 'fincanavas_panama', website: 'https://fincanavas.com',
     description: 'Finca familiar con cerdas madres y padrote Landrace de alta genética, y cultivo de ñame. Registro de cada camada y cada cosecha.',
-    cover_url: '/demo/hero.jpg', verified: false, created_at: daysAgo(20) },
+    cover_url: '/demo/hero.jpg', activities: ['porcicultura', 'agricultura'], show_on_map: true, verified: false, created_at: daysAgo(20) },
   { id: 'f-roble', owner_id: 'u-roble', slug: 'finca-el-roble-demo', name: 'Finca El Roble (demo)', province: 'Chiriquí', district: 'Bugaba',
-    whatsapp: '50760000001', description: 'Ganado de doble propósito y terneros destetados. Finca de ejemplo.', cover_url: '/demo/sacos.jpg',
+    whatsapp: '50760000001', description: 'Ganado de doble propósito y terneros destetados. Finca de ejemplo.', cover_url: '/demo/sacos.jpg', lat: 8.42, lng: -82.62, activities: ['ganaderia'], show_on_map: true,
     verified: false, created_at: daysAgo(15) },
   { id: 'f-sol', owner_id: 'u-sol', slug: 'granja-el-sol-demo', name: 'Granja El Sol (demo)', province: 'Herrera', district: 'Chitré',
-    whatsapp: '50760000002', description: 'Pollos de engorde y gallinas ponedoras. Finca de ejemplo.', cover_url: '/demo/pintos.jpg',
+    whatsapp: '50760000002', description: 'Pollos de engorde y gallinas ponedoras. Finca de ejemplo.', cover_url: '/demo/pintos.jpg', lat: 7.96, lng: -80.43, activities: ['avicultura'], show_on_map: true,
     verified: false, created_at: daysAgo(6) },
 ]
 

@@ -5,6 +5,9 @@ import { useAuth } from '../lib/auth'
 import { useAsync } from '../lib/useAsync'
 import { PROVINCES, UNITS, money } from '../lib/config'
 import { Ago, Field, Grid, Loading, Seo } from '../components/ui'
+import ImageCropper from '../components/ImageCropper'
+import { LocationPicker } from '../components/FarmMap'
+import { ACTIVITIES, PROVINCE_CENTER } from '../lib/geo'
 
 // ================================ LOGIN / REGISTRO ================================
 export function Login() {
@@ -55,17 +58,29 @@ export function Login() {
 
 // ================================ FINCA (formulario) ================================
 function FarmForm({ user, farm, onSaved }) {
-  const [f, setF] = useState(farm || { name: '', province: 'Coclé', district: '', address: '', whatsapp: user.whatsapp || '', phone: '', email: user.email || '', instagram: '', tiktok: '', facebook: '', website: '', description: '' })
+  const [f, setF] = useState(farm || { activities: [], show_on_map: true, name: '', province: 'Coclé', district: '', address: '', whatsapp: user.whatsapp || '', phone: '', email: user.email || '', instagram: '', tiktok: '', facebook: '', website: '', description: '' })
   const [busy, setBusy] = useState(false)
   const [up, setUp] = useState('')
   const [err, setErr] = useState('')
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
-  const photo = (k) => async (e) => {
-    const file = e.target.files?.[0]; if (!file) return
-    setUp(k)
+  // Logo cuadrado (600×600) y portada 16:9 (1600×900): se recortan antes de subir
+  const [crop, setCrop] = useState(null) // { key, file }
+  const photo = (k) => (e) => { const file = e.target.files?.[0]; e.target.value = ''; if (file) setCrop({ key: k, file }) }
+  const upload = async (file) => {
+    const k = crop.key; setCrop(null); setUp(k)
     try { const url = await api.uploadImage(user, file); setF((x) => ({ ...x, [k]: url })) }
     catch (er) { setErr(er.message || 'No se pudo subir la imagen') }
-    finally { setUp(''); e.target.value = '' }
+    finally { setUp('') }
+  }
+  const toggleAct = (slug) => setF((x) => { const a = x.activities || []; return { ...x, activities: a.includes(slug) ? a.filter((s) => s !== slug) : [...a, slug] } })
+  const [locMsg, setLocMsg] = useState('')
+  const useMyLocation = () => {
+    if (!navigator.geolocation) return setLocMsg('Tu navegador no permite obtener la ubicación.')
+    setLocMsg('Buscando tu ubicación…')
+    navigator.geolocation.getCurrentPosition(
+      (p) => { setF((x) => ({ ...x, lat: Math.round(p.coords.latitude * 1e4) / 1e4, lng: Math.round(p.coords.longitude * 1e4) / 1e4 })); setLocMsg('Ubicación marcada. Puedes mover el pin si hace falta.') },
+      () => setLocMsg('No pudimos obtener tu ubicación. Toca el mapa para marcarla.'),
+      { enableHighAccuracy: true, timeout: 10000 })
   }
   const submit = async (e) => {
     e.preventDefault(); setBusy(true); setErr('')
@@ -97,8 +112,30 @@ function FarmForm({ user, farm, onSaved }) {
       <Field label="Facebook (usuario de página)"><input value={f.facebook || ''} onChange={set('facebook')} /></Field>
       <Field label="Sitio web"><input value={f.website || ''} onChange={set('website')} placeholder="https://" /></Field>
       <Field label="Descripción" hint="Rubros, razas, años de experiencia, si haces entregas."><textarea rows="4" value={f.description || ''} onChange={set('description')} /></Field>
+      <div className="form__full">
+        <p className="field__label">¿Qué produce o vende tu finca?</p>
+        <p className="muted small">Define el ícono con el que sale tu finca en el mapa.</p>
+        <div className="chips chips--wrap">
+          {ACTIVITIES.map((a) => (
+            <button type="button" key={a.slug} className={`chip ${(f.activities || []).includes(a.slug) ? 'is-on' : ''}`} onClick={() => toggleAct(a.slug)}>{a.icon} {a.name}</button>
+          ))}
+        </div>
+      </div>
+      <div className="form__full">
+        <p className="field__label">Ubicación en el mapa</p>
+        <p className="muted small">Toca el mapa o arrastra el pin. Puede ser aproximada (la entrada del camino o el pueblo más cercano).</p>
+        <div className="loc-actions">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={useMyLocation}>📍 Usar mi ubicación actual</button>
+          {f.lat != null && <button type="button" className="linkbtn" onClick={() => setF((x) => ({ ...x, lat: null, lng: null }))}>Quitar ubicación</button>}
+          {locMsg && <span className="muted small">{locMsg}</span>}
+        </div>
+        <LocationPicker lat={f.lat} lng={f.lng} center={PROVINCE_CENTER[f.province]} onChange={(lat, lng) => setF((x) => ({ ...x, lat, lng }))} />
+        <label className="check"><input type="checkbox" checked={f.show_on_map !== false} onChange={(e) => setF((x) => ({ ...x, show_on_map: e.target.checked }))} /> Mostrar mi finca en el mapa público</label>
+      </div>
       {err && <p className="notice form__actions">{err}</p>}
       <div className="form__actions"><button className="btn btn--fill" disabled={busy || !!up}>{busy ? 'Guardando…' : 'Guardar finca'}</button></div>
+      {crop && <ImageCropper file={crop.file} aspect={crop.key === 'logo_url' ? 1 : 16 / 9} outW={crop.key === 'logo_url' ? 600 : 1600} round={crop.key === 'logo_url'}
+        title={crop.key === 'logo_url' ? 'Ajusta el logo' : 'Ajusta la foto de portada'} onDone={upload} onCancel={() => setCrop(null)} />}
     </form>
   )
 }
