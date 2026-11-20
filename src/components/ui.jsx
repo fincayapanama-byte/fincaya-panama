@@ -37,8 +37,13 @@ export function Header() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="¿Qué estás buscando?" aria-label="Buscar" />
           <button className="btn btn--fill btn--sm">Buscar</button>
         </form>
-        <button className="hdr__burger" onClick={() => setOpen(!open)} aria-label="Menú" aria-expanded={open}>☰</button>
-        <nav className={`hdr__nav ${open ? 'is-open' : ''}`} onClick={() => setOpen(false)}>
+        <button className="hdr__burger" onClick={() => setOpen(!open)} aria-label={open ? 'Cerrar menú' : 'Menú'} aria-expanded={open}>{open ? '✕' : '☰'}</button>
+        {open && <div className="hdr__backdrop" onClick={() => setOpen(false)} />}
+        <nav className={`hdr__nav ${open ? 'is-open' : ''}`} onClick={(e) => { if (e.target.closest('a')) setOpen(false) }}>
+          <form className="hdr__msearch" onSubmit={submit} role="search">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="¿Qué estás buscando?" aria-label="Buscar" />
+            <button className="btn btn--fill btn--sm">Buscar</button>
+          </form>
           <NavLink to="/buscar">Directorio</NavLink>
           <NavLink to="/fincas">Fincas</NavLink>
           <NavLink to="/mapa">Mapa</NavLink>

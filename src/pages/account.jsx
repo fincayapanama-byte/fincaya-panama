@@ -264,15 +264,15 @@ function MyListings({ user }) {
         <div className="kpi"><span>Contactos por WhatsApp</span><strong>{total('contacts')}</strong></div>
       </div>
       {!data.length ? <p className="empty">Aún no tienes anuncios. <Link to="/publicar">Publica el primero</Link>.</p> : (
-        <div className="table-wrap"><table className="table">
+        <div className="table-wrap"><table className="table mylist">
           <thead><tr><th>Anuncio</th><th>Precio</th><th>Estado</th><th>Visitas</th><th>Contactos</th><th></th></tr></thead>
           <tbody>{data.map((l) => (
             <tr key={l.id}>
-              <td><Link to={`/anuncio/${l.slug}`}>{l.title}</Link><br /><Ago iso={l.created_at} />{l.reject_reason && <><br /><span className="down small">Motivo: {l.reject_reason}</span></>}</td>
-              <td className="num">{money(l.price)}<br /><span className="muted">/{l.unit}</span></td>
-              <td><span className={`status status--${l.status}`}>{STATUS[l.status]}</span></td>
-              <td className="num">{l.views}</td><td className="num">{l.contacts}</td>
-              <td className="actions">
+              <td className="ml-title"><Link to={`/anuncio/${l.slug}`}>{l.title}</Link><br /><Ago iso={l.created_at} />{l.reject_reason && <><br /><span className="down small">Motivo: {l.reject_reason}</span></>}</td>
+              <td className="num ml-price">{money(l.price)}<br /><span className="muted">/{l.unit}</span></td>
+              <td className="ml-status"><span className={`status status--${l.status}`}>{STATUS[l.status]}</span></td>
+              <td className="num ml-stat" data-l="visitas">{l.views}</td><td className="num ml-stat" data-l="contactos">{l.contacts}</td>
+              <td className="actions ml-actions">
                 {l.status === 'aprobado' && <button className="linkbtn" onClick={() => api.updateMyListing(l.id, { status: 'vendido' }).then(reload)}>Marcar vendido</button>}
                 <button className="linkbtn down" onClick={() => confirm('¿Borrar este anuncio?') && api.deleteMyListing(l.id).then(reload)}>Borrar</button>
               </td>

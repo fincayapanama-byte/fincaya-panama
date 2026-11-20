@@ -309,7 +309,7 @@ export function ListingPage() {
             <div><dt>Categoría</dt><dd>{l.category?.name}</dd></div>
             {l.breed && <div><dt>Raza / variedad</dt><dd>{l.breed}</dd></div>}
             {l.quantity && <div><dt>Disponibles</dt><dd>{l.quantity}</dd></div>}
-            <div><dt>Ubicación</dt><dd>{[l.district, l.province].filter(Boolean).join(', ')}</dd></div>
+            <div><dt>Ubicación</dt><dd>{[l.district, l.province].map((x) => (x || '').trim()).filter(Boolean).join(', ')}</dd></div>
             <div><dt>Publicado</dt><dd><Ago iso={l.created_at} /></dd></div>
             <div><dt>Visitas</dt><dd>{l.views}</dd></div>
           </dl>
@@ -323,7 +323,7 @@ export function ListingPage() {
           {f.phone && <a className="btn btn--ghost btn--block" href={`tel:${f.phone}`} onClick={contact}><IcoPhone /> Llamar</a>}
           <Link to={`/finca/${f.slug}`} className="farmmini">
             {f.logo_url ? <img className="farmmini__avatar" src={f.logo_url} alt="" /> : <span className="farmmini__avatar">{(f.name || '?').slice(0, 1)}</span>}
-            <span><strong>{f.name}</strong> {f.verified && <Verified />}<br /><span className="muted">{[f.district, f.province].filter(Boolean).join(', ')}</span></span>
+            <span><strong>{f.name}</strong> {f.verified && <Verified />}<br /><span className="muted">{[f.district, f.province].map((x) => (x || '').trim()).filter(Boolean).join(', ')}</span></span>
             <IcoChevron className="ico farmmini__go" />
           </Link>
           <div className="safety">
@@ -364,7 +364,7 @@ export function FarmPage() {
       <section className="farmhero" style={f.cover_url ? { backgroundImage: `linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.65)),url(${f.cover_url})` } : undefined}>
         <div className="wrap">
           {f.logo_url && <img className="farmhero__logo" src={f.logo_url} alt={`Logo de ${f.name}`} />}
-          <p className="eyebrow">{[f.district, f.province].filter(Boolean).join(', ')}</p>
+          <p className="eyebrow">{[f.district, f.province].map((x) => (x || '').trim()).filter(Boolean).join(', ')}</p>
           <h1 className="display display--md">{f.name}</h1>
           {f.verified && <span className="tag tag--light">✔ Finca verificada</span>}
         </div>
@@ -453,7 +453,7 @@ export function Farms() {
               <div className="lcard__img lcard__img--wide" style={f.cover_url ? { backgroundImage: `url(${f.cover_url})` } : undefined}>{!f.cover_url && <span className="lcard__noimg">{f.name}</span>}</div>
               <div className="lcard__body">
                 <h3 className="lcard__title">{f.name} {f.verified && <Verified />}</h3>
-                <p className="lcard__meta">{[f.district, f.province].filter(Boolean).join(', ')}</p>
+                <p className="lcard__meta">{[f.district, f.province].map((x) => (x || '').trim()).filter(Boolean).join(', ')}</p>
                 <p className="muted clamp">{f.description}</p>
               </div>
             </Link>

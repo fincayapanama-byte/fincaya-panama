@@ -250,6 +250,7 @@ export const api = {
   },
   async saveFarm(user, farm) {
     const { listings: _l, ...clean } = farm
+    for (const k of ['name', 'district', 'address', 'instagram', 'tiktok', 'facebook', 'website', 'email']) if (typeof clean[k] === 'string') clean[k] = clean[k].trim()
     const row = { ...clean, owner_id: user.id, slug: farm.slug || `${slugify(farm.name)}-${Math.random().toString(36).slice(2, 6)}` }
     if (DEMO) {
       const db = load(); const i = db.farms.findIndex((f) => f.id === farm.id)
