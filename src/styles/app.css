@@ -567,3 +567,4 @@ select { text-overflow: ellipsis; }
 .notif-list a { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--ink); }
 .notif-list li.is-new a { border-color: var(--green); background: #F1F7F2; }
 .notif-list span { color: var(--muted); font-size: 14px; }
+.notify-card__msg.is-err { color: var(--danger); }

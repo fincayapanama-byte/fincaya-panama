@@ -30,7 +30,11 @@ export function NotifyCard({ user, admin = false }) {
   useEffect(() => { pushState().then(setSt); return onInstallChange(setInst) }, [])
   const on = async () => {
     setBusy(true); setMsg('')
-    try { await enablePush(user); setSt('on'); const r = await api.testNotification(); setMsg(r?.pushes ? 'Listo. Te enviamos un aviso de prueba.' : 'Activado. Si no ves el aviso de prueba, revisa los permisos del celular.') }
+    try {
+      await enablePush(user, (step) => setMsg(step)); setSt('on'); setMsg('Enviando aviso de prueba…')
+      const r = await Promise.race([api.testNotification(), new Promise((res) => setTimeout(() => res(null), 15000))])
+      setMsg(r?.pushes ? '✅ Listo. Te enviamos un aviso de prueba.' : 'Activado. Si no ves el aviso de prueba en unos segundos, revisa que FincaYa tenga permiso de notificaciones en los ajustes del celular.')
+    }
     catch (e) { setMsg(e.message || 'No se pudo activar'); setSt(await pushState()) }
     finally { setBusy(false) }
   }
@@ -45,9 +49,9 @@ export function NotifyCard({ user, admin = false }) {
         {st === 'unsupported' && <p className="muted small">Este navegador no permite notificaciones. Usa Chrome en Android o instala la app en iPhone.</p>}
         {st === 'denied' && <p className="muted small">Bloqueaste las notificaciones. Actívalas en los ajustes del navegador para fincayapanama.com.</p>}
         {(st === 'off' || st === 'on') && <p className="muted small">Te avisamos {what}, aunque no tengas la página abierta.</p>}
-        {msg && <p className="small notify-card__msg">{msg}</p>}
+        {msg && <p className={`small notify-card__msg ${/^(✅|Activado|Pidiendo|Preparando|Conectando|Registrando|Guardando|Enviando)/.test(msg) ? '' : 'is-err'}`}>{msg}</p>}
         <div className="notify-card__actions">
-          {st === 'off' && <button className="btn btn--fill btn--sm" onClick={on} disabled={busy}>{busy ? 'Activando…' : 'Activar notificaciones'}</button>}
+          {st === 'off' && <button className="btn btn--fill btn--sm" onClick={on} disabled={busy}>{busy ? 'Activando…' : st === 'off' && msg ? 'Intentar de nuevo' : 'Activar notificaciones'}</button>}
           {st === 'on' && <button className="btn btn--ghost btn--sm" onClick={off} disabled={busy}>Desactivar</button>}
           {inst && !isStandalone() && <button className="btn btn--ghost btn--sm" onClick={promptInstall}>📲 Instalar app</button>}
         </div>

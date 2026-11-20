@@ -22,15 +22,37 @@ export async function pushState() {
   return sub && Notification.permission === 'granted' ? 'on' : 'off'
 }
 
-export async function enablePush(user) {
+// Cada paso tiene tiempo límite: si el celular no responde, explicamos en cuál se quedó.
+const withTimeout = (p, ms, msg) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(msg)), ms))])
+export const isBrave = async () => !!(navigator.brave && (await navigator.brave.isBrave?.()))
+const isSamsung = () => /SamsungBrowser/i.test(navigator.userAgent)
+
+export async function enablePush(user, onStep = () => {}) {
   if (DEMO) throw new Error('En modo demo no se envían notificaciones.')
-  const perm = await Notification.requestPermission()
-  if (perm !== 'granted') throw new Error('Permiso de notificaciones no concedido.')
+  if (await isBrave()) throw new Error('Brave bloquea las notificaciones. Abre fincayapanama.com en Google Chrome para activarlas.')
+  onStep('Pidiendo permiso…')
+  const perm = Notification.permission === 'granted' ? 'granted'
+    : await withTimeout(Notification.requestPermission(), 60000, 'No respondiste el permiso de notificaciones. Toca de nuevo y elige "Permitir".')
+  if (perm !== 'granted') throw new Error('No se concedió el permiso. Actívalo en Ajustes → Apps → FincaYa (o Chrome) → Notificaciones.')
+  onStep('Preparando la app…')
   const reg = (await navigator.serviceWorker.getRegistration()) || (await navigator.serviceWorker.register('/sw.js'))
-  await navigator.serviceWorker.ready
-  const key = await api.vapidKey()
-  const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(key) }))
-  await api.savePushSubscription(user, sub)
+  await withTimeout(navigator.serviceWorker.ready, 15000, 'La app no terminó de cargar. Cierra la app, ábrela de nuevo e intenta otra vez.')
+  onStep('Conectando con el servidor…')
+  const key = await withTimeout(api.vapidKey(), 15000, 'Sin conexión con el servidor. Revisa tu internet e intenta de nuevo.')
+  onStep('Registrando este celular…')
+  let sub = await reg.pushManager.getSubscription()
+  if (!sub) {
+    try {
+      sub = await withTimeout(reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(key) }), 20000,
+        isSamsung() ? 'El navegador de Samsung no completó el registro. Abre fincayapanama.com en Google Chrome e intenta de nuevo.'
+          : 'El servicio de notificaciones de Google no respondió. Usa Google Chrome actualizado y revisa que tenga datos o wifi.')
+    } catch (e) {
+      if (/push service|AbortError|registration/i.test(e.message || e.name)) throw new Error('El celular rechazó el registro de notificaciones. Usa Google Chrome actualizado (no Brave ni modo incógnito).')
+      throw e
+    }
+  }
+  onStep('Guardando…')
+  await withTimeout(api.savePushSubscription(user, sub), 15000, 'No se pudo guardar el registro. Intenta de nuevo.')
   return sub
 }
 
