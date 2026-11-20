@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.fincayapanama.app",
+      "sha256_cert_fingerprints": ["88:51:11:03:4F:5A:B7:8C:27:36:91:9C:13:AE:FC:D8:3D:E8:67:9F:28:FB:D2:78:82:7C:45:B7:FE:44:BD:74"]
+    }
+  }
+]
