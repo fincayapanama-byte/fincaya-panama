@@ -535,3 +535,18 @@ img, video, iframe { max-width: 100%; }
   .table.mylist tr > .ml-stat:nth-of-type(5) { grid-column: 2; text-align: right; }
   .table.mylist .ml-actions { grid-column: 1 / -1; display: flex; gap: 16px; padding-top: 4px; }
 }
+
+/* ===== Compatibilidad iPhone / Safari ===== */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+#root { overflow-x: clip; }
+/* Safari no achica selects ni inputs por debajo de su texto: forzamos que respeten el ancho disponible */
+input, select, textarea { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.hsearch > *, .mfilters__row > *, .toolbar > *, .form > *, .mapbar > *, .search-layout > *, .detail > * { min-width: 0; }
+select { text-overflow: ellipsis; }
+/* El iPhone hace zoom al tocar campos con letra menor a 16 px: en celulares siempre 16 px */
+@media (max-width: 960px), (pointer: coarse) {
+  input, select, textarea { font-size: 16px !important; }
+}
+/* Barra de categorías del mapa: sin márgenes negativos que se salgan de la pantalla */
+.mapbar .chips--scroll { margin-left: 0 !important; margin-right: 0 !important; padding-left: 0 !important; padding-right: 0 !important; max-width: 100%; }
+.mapbar { max-width: 100%; }
