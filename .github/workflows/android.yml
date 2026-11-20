@@ -1,0 +1,46 @@
+name: App Android
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: 'Número de versión (súbelo +1 en cada envío a Google Play)'
+        required: true
+        default: '1'
+      version_name:
+        description: 'Nombre de versión visible (ej. 1.0.0)'
+        required: true
+        default: '1.0.0'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Versión
+        working-directory: android
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${{ inputs.version_code }}/" app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ inputs.version_name }}\"/" app/build.gradle
+      - name: Compilar paquete (.aab)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon bundleRelease
+      - name: Firmar con la llave de subida
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          echo "$KS_B64" | base64 -d > upload.keystore
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore upload.keystore -storepass "$KS_PW" -keypass "$KS_PW" "$AAB" fincaya
+          mkdir -p salida && cp "$AAB" "salida/fincaya-${{ inputs.version_name }}-${{ inputs.version_code }}.aab"
+          rm -f upload.keystore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fincaya-app-android
+          path: salida/*.aab
