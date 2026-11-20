@@ -40,5 +40,6 @@ export const timeAgo = (iso) => {
   const d = (Date.now() - new Date(iso).getTime()) / 1000
   if (d < 3600) return `hace ${Math.max(1, Math.round(d / 60))} min`
   if (d < 86400) return `hace ${Math.round(d / 3600)} h`
-  return `hace ${Math.round(d / 86400)} días`
+  const n = Math.round(d / 86400)
+  return n === 1 ? 'hace 1 día' : `hace ${n} días`
 }

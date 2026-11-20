@@ -291,6 +291,38 @@ export const api = {
     if (DEMO) { const db = load(); db.listings = db.listings.filter((l) => l.id !== id); save(); return }
     ok(await supabase.from('listings').delete().eq('id', id))
   },
+  // ---- Avisos (centro de notificaciones) ----
+  async notifications(user) {
+    if (DEMO) { const db = load(); return (db.notifications ||= [
+      { id: 'n1', kind: 'listing_approved', title: '✅ Tu anuncio fue publicado', body: '"Lechones Landrace de alta genética" ya está visible.', url: '/anuncio/lechones-landrace-penonome-l1', created_at: new Date(Date.now() - 36e5).toISOString() },
+      { id: 'n2', kind: 'comment', title: '💬 Comentario en Instagram', body: 'María: ¿Todavía tienen lechones?', url: '/panel/comentarios', created_at: new Date(Date.now() - 864e5).toISOString(), read_at: new Date().toISOString() },
+    ]).filter(() => user) }
+    return ok(await supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(60)) || []
+  },
+  async unreadCount(user) {
+    if (DEMO) return (await api.notifications(user)).filter((n) => !n.read_at).length
+    const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).is('read_at', null)
+    return count || 0
+  },
+  async markAllRead(user) {
+    if (DEMO) { const db = load(); (db.notifications || []).forEach((n) => { n.read_at ||= new Date().toISOString() }); save(); return }
+    ok(await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', user.id).is('read_at', null))
+  },
+  async vapidKey() {
+    const r = await fetch(`${URL}/functions/v1/notify?vapid=1`); return (await r.json()).publicKey
+  },
+  async savePushSubscription(user, sub) {
+    const j = sub.toJSON()
+    ok(await supabase.from('push_subscriptions').upsert({ user_id: user.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200) }, { onConflict: 'endpoint' }))
+  },
+  async removePushSubscription(endpoint) {
+    if (!DEMO) await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
+  },
+  async testNotification() {
+    const { data, error } = await supabase.functions.invoke('notify', { body: { event: 'test' } })
+    if (error) throw error
+    return data
+  },
   async myComments(user) {
     if (DEMO) {
       const db = load(); const mine = new Set(db.listings.filter((l) => l.owner_id === user.id).map((l) => l.id))

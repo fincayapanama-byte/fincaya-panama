@@ -1,3 +1,4 @@
+import { Bell } from './Notify'
 import { IcoFacebook, IcoInstagram, IcoTikTok, IcoWhatsApp } from './icons'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
@@ -37,6 +38,7 @@ export function Header() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="¿Qué estás buscando?" aria-label="Buscar" />
           <button className="btn btn--fill btn--sm">Buscar</button>
         </form>
+        {user && <Bell user={user} />}
         <button className="hdr__burger" onClick={() => setOpen(!open)} aria-label={open ? 'Cerrar menú' : 'Menú'} aria-expanded={open}>{open ? '✕' : '☰'}</button>
         {open && <div className="hdr__backdrop" onClick={() => setOpen(false)} />}
         <nav className={`hdr__nav ${open ? 'is-open' : ''}`} onClick={(e) => { if (e.target.closest('a')) setOpen(false) }}>

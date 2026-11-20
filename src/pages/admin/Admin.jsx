@@ -4,6 +4,7 @@ import { composeBrandImage, composePricesImage } from '../../lib/brandImage'
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import { NotifyCard } from '../../components/Notify'
 import { useAsync } from '../../lib/useAsync'
 import { AD_PLACEMENTS, PROVINCES, UNITS, money } from '../../lib/config'
 import { Ago, Field, Loading, Seo } from '../../components/ui'
@@ -46,6 +47,7 @@ export default function Admin() {
 }
 
 function Overview() {
+  const { user } = useAuth()
   const { data: s } = useAsync(() => api.admin.stats(), [])
   if (!s) return <Loading />
   const K = ({ label, value, to, warn }) => (
@@ -53,6 +55,7 @@ function Overview() {
   )
   return (
     <>
+      <NotifyCard user={user} admin />
       <div className="kpis kpis--4">
         <K label="Usuarios" value={s.users} to="/admin/usuarios" />
         <K label="Fincas (verificadas)" value={`${s.farms} (${s.verified})`} to="/admin/fincas" />

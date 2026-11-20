@@ -550,3 +550,20 @@ select { text-overflow: ellipsis; }
 /* Barra de categorías del mapa: sin márgenes negativos que se salgan de la pantalla */
 .mapbar .chips--scroll { margin-left: 0 !important; margin-right: 0 !important; padding-left: 0 !important; padding-right: 0 !important; max-width: 100%; }
 .mapbar { max-width: 100%; }
+
+/* ===== Avisos y notificaciones ===== */
+.bell { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: var(--ink); margin-left: auto; }
+.bell:hover { background: var(--cream); }
+.bell__n { position: absolute; top: 4px; right: 3px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: var(--danger); color: #fff; font: 700 11px/18px Inter, sans-serif; text-align: center; }
+.bell + .hdr__burger { margin-left: 4px; }
+@media (min-width: 961px) { .bell { order: 5; margin-left: 4px; } }
+.notify-card { display: flex; gap: 14px; padding: 16px; margin-bottom: 18px; border-left: 4px solid var(--green); }
+.notify-card__icon { font-size: 28px; line-height: 1; }
+.notify-card__title { font-weight: 700; margin: 0 0 4px; }
+.notify-card__body .muted { margin: 0 0 8px; }
+.notify-card__msg { margin: 0 0 8px; color: var(--green); font-weight: 600; }
+.notify-card__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.notif-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.notif-list a { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--ink); }
+.notif-list li.is-new a { border-color: var(--green); background: #F1F7F2; }
+.notif-list span { color: var(--muted); font-size: 14px; }

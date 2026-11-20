@@ -7,6 +7,7 @@ import { PROVINCES, UNITS, money } from '../lib/config'
 import { Ago, Field, Grid, Loading, Seo } from '../components/ui'
 import ImageCropper from '../components/ImageCropper'
 import { LocationPicker } from '../components/FarmMap'
+import { Notifications } from '../components/Notify'
 import { ACTIVITIES, PROVINCE_CENTER } from '../lib/geo'
 
 // ================================ LOGIN / REGISTRO ================================
@@ -229,6 +230,7 @@ export function Dashboard() {
       </div>
       <nav className="subnav">
         <NavLink end to="/panel">Mis anuncios</NavLink>
+        <NavLink to="/panel/avisos">Avisos</NavLink>
         <NavLink to="/panel/comentarios">Comentarios</NavLink>
         <NavLink to="/panel/finca">Mi finca</NavLink>
         <NavLink to="/panel/favoritos">Favoritos</NavLink>
@@ -236,6 +238,7 @@ export function Dashboard() {
       </nav>
       <Routes>
         <Route index element={<MyListings user={user} />} />
+        <Route path="avisos" element={<Notifications user={user} />} />
         <Route path="comentarios" element={<MyComments user={user} />} />
         <Route path="finca" element={<MyFarm user={user} />} />
         <Route path="favoritos" element={<Favorites user={user} />} />
