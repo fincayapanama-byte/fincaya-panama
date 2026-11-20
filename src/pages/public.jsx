@@ -428,7 +428,7 @@ export function FarmsMapPage({ embedded = false }) {
         </select>
       </div>
       <div onClick={onClick} className="mapwrap">
-        <FarmsMap farms={farms} focus={focus} height={embedded ? 440 : 'min(70vh, 640px)'} />
+        <FarmsMap farms={farms} focus={focus} height={embedded ? 'min(60vh, 440px)' : 'min(68vh, 640px)'} lockText={embedded ? 'Toca para explorar el mapa' : 'Toca para mover el mapa'} />
         {data && <span className="mapcount">{farms.length} finca{farms.length === 1 ? '' : 's'} en el mapa</span>}
       </div>
       {!embedded && <p className="muted small">¿Tu finca no aparece? <Link to="/panel/finca">Marca su ubicación en tu panel</Link> o <Link to="/publicar">regístrala gratis</Link>.</p>}
