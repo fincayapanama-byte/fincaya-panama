@@ -5,6 +5,7 @@ import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { NotifyCard } from '../../components/Notify'
+import SectionNav from '../../components/SectionNav'
 import { useAsync } from '../../lib/useAsync'
 import { AD_PLACEMENTS, PROVINCES, UNITS, money } from '../../lib/config'
 import { Ago, Field, Loading, Seo } from '../../components/ui'
@@ -18,18 +19,7 @@ export default function Admin() {
     <div className="wrap section">
       <Seo title="Administración" />
       <div className="panel-head"><h1 className="h1">Administración</h1><button className="btn btn--ghost btn--sm" onClick={() => api.signOut()}>Salir</button></div>
-      <nav className="subnav">
-        <NavLink end to="/admin">Resumen</NavLink>
-        <NavLink to="/admin/anuncios">Anuncios</NavLink>
-        <NavLink to="/admin/usuarios">Usuarios</NavLink>
-        <NavLink to="/admin/fincas">Fincas</NavLink>
-        <NavLink to="/admin/precios">Precios</NavLink>
-        <NavLink to="/admin/marca">Publicar en redes</NavLink>
-        <NavLink to="/admin/redes">Cola de anuncios</NavLink>
-        <NavLink to="/admin/comentarios">Comentarios</NavLink>
-        <NavLink to="/admin/publicidad">Publicidad</NavLink>
-        <NavLink to="/admin/reportes">Reportes</NavLink>
-      </nav>
+      <SectionNav label="Administración" items={[{ to: '/admin', label: 'Resumen', end: true }, { to: '/admin/anuncios', label: 'Anuncios' }, { to: '/admin/usuarios', label: 'Usuarios' }, { to: '/admin/fincas', label: 'Fincas' }, { to: '/admin/precios', label: 'Precios' }, { to: '/admin/marca', label: 'Publicar en redes' }, { to: '/admin/redes', label: 'Cola de anuncios' }, { to: '/admin/comentarios', label: 'Comentarios' }, { to: '/admin/publicidad', label: 'Publicidad' }, { to: '/admin/reportes', label: 'Reportes' }]} />
       <Routes>
         <Route index element={<Overview />} />
         <Route path="anuncios" element={<Listings />} />

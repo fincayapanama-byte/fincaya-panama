@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAsync } from '../lib/useAsync'
 import { BRAND, PROVINCES, money, slugify, waLink } from '../lib/config'
-import { IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, handle } from '../components/icons'
+import { IcoMap, IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, handle } from '../components/icons'
 import { FarmsMap } from '../components/FarmMap'
 import { ACTIVITIES, PROVINCE_CENTER, activity } from '../lib/geo'
 import { AdSlot, Ago, FavButton, Grid, Loading, PriceTable, Seo, Sparkline, Verified, ListingCard } from '../components/ui'
@@ -101,7 +101,7 @@ export function Home() {
       <div className="wrap"><AdSlot placement="home_top" /></div>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Anuncios destacados</h2><Link className="more" to="/buscar">Ver directorio <IcoArrow /></Link></div>
+        <div className="section__head"><h2>Anuncios destacados</h2><Link className="more" to="/buscar" aria-label="Ver directorio"><span className="more__t">Ver directorio</span> <IcoArrow /></Link></div>
         <p className="muted small note">Los destacados tienen mayor visibilidad y se identifican con la etiqueta «Destacado».</p>
         <Grid items={featured.data} empty="Aún no hay anuncios destacados." />
       </section>
@@ -123,12 +123,12 @@ export function Home() {
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Fincas cerca de ti</h2><Link className="more" to="/mapa">Abrir mapa <IcoArrow /></Link></div>
+        <div className="section__head"><h2>Fincas cerca de ti</h2><Link className="more" to="/mapa" aria-label="Abrir mapa"><span className="more__t">Abrir mapa</span> <IcoMap className="ico more__map" /><IcoArrow className="ico more__arr" /></Link></div>
         <FarmsMapPage embedded />
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Precios del día</h2><Link className="more" to="/precios">Ver todos <IcoArrow /></Link></div>
+        <div className="section__head"><h2>Precios del día</h2><Link className="more" to="/precios" aria-label="Ver todos los precios"><span className="more__t">Ver todos</span> <IcoArrow /></Link></div>
         <div className="chips" role="tablist">
           {[['alza', '▲ Mayores alzas'], ['baja', '▼ Mayores bajas'], ['destacados', 'Destacados']].map(([k, t]) => (
             <button key={k} role="tab" aria-selected={priceView === k} className={`chip ${priceView === k ? 'is-on' : ''}`} onClick={() => setPriceView(k)}>{t}</button>
@@ -210,17 +210,17 @@ export function Search() {
       <Seo title={title} description={`${title}: anuncios de productores en Panamá con precio, ubicación y contacto por WhatsApp.`} />
       <nav className="crumbs"><Link to="/">Inicio</Link> / <Link to="/buscar">Directorio</Link>{catObj && <> / {catObj.name}</>}</nav>
       <h1 className="h1">{title}</h1>
-      {/* Filtros compactos para celular */}
+      {/* Filtros compactos para celular: desplegables */}
       <div className="mfilters">
-        <div className="chips chips--scroll">
-          <button className={`chip ${!cat ? 'is-on' : ''}`} onClick={() => go('', province)}>Todas</button>
-          {roots.map((r) => <button key={r.slug} className={`chip ${rootSel === r.slug ? 'is-on' : ''}`} onClick={() => go(r.slug, province)}>{r.name}</button>)}
-        </div>
-        {rootSel && kids(rootSel).length > 0 && (
-          <div className="chips chips--scroll">
-            {kids(rootSel).map((k) => <button key={k.slug} className={`chip chip--sm ${cat === k.slug ? 'is-on' : ''}`} onClick={() => go(k.slug, province)}>{k.name}</button>)}
-          </div>
-        )}
+        <select value={cat || ''} onChange={(e) => go(e.target.value, province)} aria-label="Categoría" className="mfilters__cat">
+          <option value="">Todas las categorías</option>
+          {roots.map((r) => (
+            <optgroup key={r.slug} label={r.name}>
+              <option value={r.slug}>Todo {r.name.toLowerCase()}</option>
+              {kids(r.slug).map((k) => <option key={k.slug} value={k.slug}>{k.name}</option>)}
+            </optgroup>
+          ))}
+        </select>
         <div className="mfilters__row">
           <select value={province} onChange={(e) => go(cat, e.target.value)} aria-label="Provincia">
             <option value="">Todo Panamá</option>{PROVINCES.map((p) => <option key={p}>{p}</option>)}
@@ -419,10 +419,14 @@ export function FarmsMapPage({ embedded = false }) {
         <p className="lead">Encuentra productores cerca de ti. Toca un ícono para ver la finca y escribirle.</p>
       </>}
       <div className="mapbar">
-        <div className="chips chips--scroll">
+        <div className="chips chips--scroll mapbar__chips">
           <button className={`chip ${!acts.length ? 'is-on' : ''}`} onClick={() => setActs([])}>Todas</button>
           {(present.length ? present : ACTIVITIES).map((a) => <button key={a.slug} className={`chip ${acts.includes(a.slug) ? 'is-on' : ''}`} onClick={() => toggle(a.slug)}>{a.icon} {a.name}</button>)}
         </div>
+        <select className="mapbar__act" value={acts[0] || ''} onChange={(e) => setActs(e.target.value ? [e.target.value] : [])} aria-label="Actividad">
+          <option value="">Todas las actividades</option>
+          {(present.length ? present : ACTIVITIES).map((a) => <option key={a.slug} value={a.slug}>{a.icon} {a.name}</option>)}
+        </select>
         <select className="inline-select" value={prov} onChange={(e) => setProv(e.target.value)} aria-label="Provincia">
           <option value="">Todo Panamá</option>{PROVINCES.map((p) => <option key={p}>{p}</option>)}
         </select>
@@ -442,7 +446,7 @@ export function Farms() {
   return (
     <div className="wrap section">
       <Seo title="Directorio de fincas de Panamá" description="Fincas y productores agropecuarios de Panamá por provincia: porcinos, ganado, aves y cultivos." />
-      <div className="section__head"><h1 className="h1" style={{ margin: 0 }}>Directorio de fincas</h1><Link className="more" to="/mapa">Ver en el mapa <IcoArrow /></Link></div>
+      <div className="section__head"><h1 className="h1" style={{ margin: 0 }}>Directorio de fincas</h1><Link className="more" to="/mapa" aria-label="Ver en el mapa"><span className="more__t">Ver en el mapa</span> <IcoMap className="ico more__map" /><IcoArrow className="ico more__arr" /></Link></div>
       <select className="inline-select" value={prov} onChange={(e) => setProv(e.target.value)}>
         <option value="">Todas las provincias</option>{PROVINCES.map((p) => <option key={p}>{p}</option>)}
       </select>

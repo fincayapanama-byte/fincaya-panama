@@ -8,6 +8,7 @@ import { Ago, Field, Grid, Loading, Seo } from '../components/ui'
 import ImageCropper from '../components/ImageCropper'
 import { LocationPicker } from '../components/FarmMap'
 import { Notifications } from '../components/Notify'
+import SectionNav from '../components/SectionNav'
 import { ACTIVITIES, PROVINCE_CENTER } from '../lib/geo'
 
 // ================================ LOGIN / REGISTRO ================================
@@ -228,14 +229,10 @@ export function Dashboard() {
         <h1 className="h1">Hola, {user.full_name?.split(' ')[0] || 'productor'}</h1>
         <div><Link to="/publicar" className="btn btn--accent btn--sm">+ Publicar</Link> <button className="btn btn--ghost btn--sm" onClick={() => api.signOut()}>Salir</button></div>
       </div>
-      <nav className="subnav">
-        <NavLink end to="/panel">Mis anuncios</NavLink>
-        <NavLink to="/panel/avisos">Avisos</NavLink>
-        <NavLink to="/panel/comentarios">Comentarios</NavLink>
-        <NavLink to="/panel/finca">Mi finca</NavLink>
-        <NavLink to="/panel/favoritos">Favoritos</NavLink>
-        <NavLink to="/panel/precio">Reportar precio</NavLink>
-      </nav>
+      <SectionNav label="Mi panel" items={[
+        { to: '/panel', label: 'Mis anuncios', end: true }, { to: '/panel/avisos', label: 'Avisos' },
+        { to: '/panel/comentarios', label: 'Comentarios' }, { to: '/panel/finca', label: 'Mi finca' },
+        { to: '/panel/favoritos', label: 'Favoritos' }, { to: '/panel/precio', label: 'Reportar precio' }]} />
       <Routes>
         <Route index element={<MyListings user={user} />} />
         <Route path="avisos" element={<Notifications user={user} />} />

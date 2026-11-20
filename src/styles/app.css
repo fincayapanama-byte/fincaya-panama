@@ -568,3 +568,26 @@ select { text-overflow: ellipsis; }
 .notif-list li.is-new a { border-color: var(--green); background: #F1F7F2; }
 .notif-list span { color: var(--muted); font-size: 14px; }
 .notify-card__msg.is-err { color: var(--danger); }
+
+/* ===== Móvil v3: desplegables en vez de filas deslizables ===== */
+.secnav { display: none; }
+.mapbar__act { display: none; }
+.mfilters__cat { width: 100%; }
+.mapframe, .leaflet-box { isolation: isolate; }
+.notify-card__msg { white-space: pre-line; }
+@media (max-width: 760px) {
+  .subnav--desk { display: none; }
+  .secnav { display: flex; align-items: center; gap: 10px; margin: 6px 0 18px; padding: 6px 6px 6px 14px; background: var(--white); border: 1px solid var(--line); border-radius: 14px; }
+  .secnav__l { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; white-space: nowrap; }
+  .secnav select { border: 0; font-weight: 700; color: var(--green); background-color: transparent; padding: 10px 8px; }
+  .mapbar__chips { display: none !important; }
+  .mapbar__act { display: block; }
+  .mapbar { flex-direction: row !important; gap: 8px; }
+  .mapbar > select { flex: 1 1 0; margin: 0; max-width: none; }
+  /* Botones "Ver…" como íconos redondos */
+  a.more { width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 50%; flex: none; gap: 0; background: var(--white); }
+  a.more .more__t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  a.more .more__arr { display: none; }
+  .section__head { align-items: center; }
+}
+@media (min-width: 761px) { a.more .more__map { display: none; } }

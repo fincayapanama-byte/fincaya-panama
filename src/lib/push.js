@@ -32,7 +32,9 @@ export async function enablePush(user, onStep = () => {}) {
   if (await isBrave()) throw new Error('Brave bloquea las notificaciones. Abre fincayapanama.com en Google Chrome para activarlas.')
   onStep('Pidiendo permiso…')
   const perm = Notification.permission === 'granted' ? 'granted'
-    : await withTimeout(Notification.requestPermission(), 60000, 'No respondiste el permiso de notificaciones. Toca de nuevo y elige "Permitir".')
+    : await withTimeout(Notification.requestPermission(), 20000, isStandalone()
+      ? 'Chrome no mostró la ventana de permiso. Actívalo así:\n1. Mantén presionado el ícono de FincaYa → ⓘ Información de la app → Notificaciones → Permitir.\n2. Vuelve aquí y toca "Intentar de nuevo".'
+      : 'Chrome no mostró la ventana de permiso. Actívalo así:\n1. Toca el candado 🔒 (o la campana 🔕) junto a fincayapanama.com en la barra de direcciones.\n2. Permisos → Notificaciones → Permitir.\n3. Toca "Intentar de nuevo".')
   if (perm !== 'granted') throw new Error('No se concedió el permiso. Actívalo en Ajustes → Apps → FincaYa (o Chrome) → Notificaciones.')
   onStep('Preparando la app…')
   const reg = (await navigator.serviceWorker.getRegistration()) || (await navigator.serviceWorker.register('/sw.js'))

@@ -11,4 +11,5 @@ export const IcoGlobe = (p) => <S fill="none" stroke="currentColor" strokeWidth=
 export const IcoMail = (p) => <S fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></S>
 export const IcoArrow = (p) => <S size={18} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M5 12h14M13 6l6 6-6 6"/></S>
 export const IcoChevron = (p) => <S size={18} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m9 6 6 6-6 6"/></S>
+export const IcoMap = (p) => <S fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z"/><path d="M9 4v13M15 6.5v13"/></S>
 export const handle = (s) => String(s || '').trim().replace(/^https?:\/\/[^/]+\//, '').replace(/^@+/, '').replace(/\/$/, '')

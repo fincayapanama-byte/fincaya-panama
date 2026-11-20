@@ -118,7 +118,7 @@ export function ListingCard({ l }) {
         <h3 className="lcard__title">{l.title}</h3>
         <p className="lcard__price">{money(l.price)}<span> / {l.unit}</span></p>
         <p className="lcard__meta">
-          {l.farm?.name}{l.farm?.verified && <Verified />} · {l.district ? `${l.district}, ` : ''}{l.province}
+          {l.farm?.name}{l.farm?.verified && <Verified />} · {[l.district, l.province].map((x) => (x || '').trim()).filter(Boolean).join(', ')}
         </p>
         <span className="lcard__cta">Ver detalles</span>
       </div>
