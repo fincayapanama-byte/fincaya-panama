@@ -31,7 +31,7 @@ export function Header() {
       {DEMO && <div className="demo-bar">Modo demo: datos de ejemplo guardados solo en este navegador. Conecta Supabase para producción.</div>}
       <div className="hdr__in">
         <Link to="/" className="brand" aria-label={`${BRAND.name}, inicio`}>
-          <img src="/logo.png" alt={BRAND.name} width="720" height="213" />
+          <img src="/logo.svg" alt={BRAND.name} width="1280" height="512" />
         </Link>
         <form className="hdr__search" onSubmit={submit} role="search">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="¿Qué estás buscando?" aria-label="Buscar" />
@@ -57,7 +57,7 @@ export function Footer() {
     <footer className="ftr">
       <div className="wrap ftr__grid">
         <div>
-          <img className="ftr__logo" src="/logo.png" alt={BRAND.name} width="720" height="213" loading="lazy" />
+          <img className="ftr__logo" src="/logo-blanco.svg" alt={BRAND.name} width="1280" height="512" loading="lazy" />
           <p className="muted">{BRAND.tagline} Compra, vende y conecta con el agro panameño.</p>
           <p className="ftr__social social">
             <a href={`https://instagram.com/${BRAND.instagram}`} target="_blank" rel="noopener" className="social__btn social__btn--ig" aria-label="Instagram"><IcoInstagram /></a>
