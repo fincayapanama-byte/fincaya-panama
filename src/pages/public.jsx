@@ -486,12 +486,21 @@ export function Prices() {
       <h1 className="h1">Precios del día</h1>
       <p className="lead">Precios mayoristas oficiales del <a href="https://sipan.ima.gob.pa" target="_blank" rel="noopener">IMA (SIPAN)</a>, actualizados cada mañana, y precios reportados por productores. Los marcados como <span className="tag">Referencia</span> se calculan con los anuncios publicados y no son oficiales.</p>
       {markets.data?.length > 0 && (
-        <div className="chips" role="tablist">
+        <div className="chips prices__chips" role="tablist">
           {markets.data.map((m) => (
             <button key={m.market} role="tab" aria-selected={sel === m.market} className={`chip ${sel === m.market ? 'is-on' : ''}`} onClick={() => setMarket(m.market)}>{m.market}</button>
           ))}
           <button role="tab" aria-selected={sel === ''} className={`chip ${sel === '' ? 'is-on' : ''}`} onClick={() => setMarket('')}>Todos</button>
         </div>
+      )}
+      {markets.data?.length > 0 && (
+        <label className="secnav prices__mkt">
+          <span className="secnav__l">Mercado</span>
+          <select value={sel} onChange={(e) => setMarket(e.target.value)} aria-label="Mercado">
+            {markets.data.map((m) => <option key={m.market} value={m.market}>{m.market}</option>)}
+            <option value="">Todos los mercados</option>
+          </select>
+        </label>
       )}
       <div className="toolbar">
         <input placeholder="Buscar producto (ej. ñame, tomate, yuca)" value={q} onChange={(e) => setQ(e.target.value)} />

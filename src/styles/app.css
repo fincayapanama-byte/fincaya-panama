@@ -591,3 +591,9 @@ select { text-overflow: ellipsis; }
   .section__head { align-items: center; }
 }
 @media (min-width: 761px) { a.more .more__map { display: none; } }
+
+/* Precios del día: mercado en desplegable en el celular */
+@media (max-width: 760px) {
+  .prices__chips { display: none !important; }
+  .prices__mkt { margin: 4px 0 10px; }
+}
