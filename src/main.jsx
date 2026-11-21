@@ -5,8 +5,10 @@ import App from './App'
 import { AuthProvider } from './lib/auth'
 import './styles/app.css'
 import { registerSW } from './lib/push'
+import { initReveal } from './lib/reveal'
 
 registerSW()
+initReveal()
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

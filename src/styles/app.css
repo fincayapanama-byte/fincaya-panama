@@ -597,3 +597,53 @@ select { text-overflow: ellipsis; }
   .prices__chips { display: none !important; }
   .prices__mkt { margin: 4px 0 10px; }
 }
+.del-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 18px; }
+
+/* ===== Categorías con foto (v2) ===== */
+.kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--green-900); }
+.kicker::before { content: ''; width: 34px; height: 3px; border-radius: 3px; background: var(--orange-action); }
+.section__head--big { align-items: flex-end; }
+.section__head--big h2 { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 4vw, 40px); letter-spacing: -.02em; line-height: 1.1; color: var(--green-900); margin: 0; }
+.ccards { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 14px; }
+.ccard { display: flex; flex-direction: column; background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; text-decoration: none; color: var(--ink); box-shadow: 0 3px 6px rgba(11, 93, 59, .04); transition: transform .2s, box-shadow .2s; -webkit-tap-highlight-color: transparent; }
+.ccard__media { position: relative; display: grid; place-items: center; height: 128px; overflow: hidden; background: linear-gradient(135deg, #E7F0E2, #CFE3C6); color: var(--green-600); }
+.ccard__media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; z-index: 1; }
+.ccard__ph { opacity: .55; }
+.ccard__foot { display: flex; align-items: center; gap: 8px; padding: 12px; min-height: 60px; }
+.ccard__ico { flex: none; color: var(--orange-action); }
+.ccard__name { flex: 1; font-family: var(--display); font-weight: 600; font-size: 15px; line-height: 1.2; color: var(--green-900); }
+.ccard__arr { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #FFF1E0; color: var(--orange-action); transition: transform .2s, background .2s, color .2s; }
+.ccard:hover { transform: translateY(-4px); box-shadow: 0 14px 28px rgba(11, 93, 59, .14); }
+.ccard:hover .ccard__media img { transform: scale(1.07); }
+.ccard:hover .ccard__arr { background: var(--orange-action); color: #fff; transform: translateX(2px); }
+.ccard:active { transform: scale(.97); }
+@media (max-width: 760px) {
+  .ccards { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ccard__media { height: 112px; }
+  .ccard__foot { padding: 10px; gap: 6px; min-height: 56px; }
+  .ccard__ico { width: 22px; height: 22px; }
+  .ccard__name { font-size: 13.5px; }
+  .ccard__arr { width: 26px; height: 26px; }
+  .ccards > .ccard:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .ccards > .ccard:last-child:nth-child(odd) .ccard__media { height: 140px; }
+}
+
+/* ===== Animaciones de entrada ===== */
+@keyframes rv-fade-up { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes rv-scale-in { from { opacity: 0; transform: scale(.86) translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes rv-blur-in { from { opacity: 0; filter: blur(10px); transform: translateY(14px); } to { opacity: 1; filter: none; transform: none; } }
+@keyframes rv-slide-left { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: none; } }
+@keyframes rv-slide-right { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+.js-reveal [data-reveal]:not(.revealed) { opacity: 0; }
+.js-reveal [data-reveal].revealed { animation: rv-fade-up .68s cubic-bezier(.22, 1, .36, 1) var(--d, 0ms) both; }
+.js-reveal [data-reveal="scale-in"].revealed { animation-name: rv-scale-in; }
+.js-reveal [data-reveal="blur-in"].revealed { animation-name: rv-blur-in; }
+.js-reveal [data-reveal="slide-left"].revealed { animation-name: rv-slide-left; }
+.js-reveal [data-reveal="slide-right"].revealed { animation-name: rv-slide-right; }
+/* la tarjeta conserva su efecto hover después de animar */
+.js-reveal .ccard.revealed { animation-fill-mode: backwards; }
+/* Escritorio: carrusel horizontal con snap (9 categorías no cuadran en filas) */
+@media (min-width: 761px) {
+  .ccards { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: calc((100% - 4 * 14px) / 5.35); overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 18px; margin: -4px -2px 0; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  .ccard { scroll-snap-align: start; }
+}

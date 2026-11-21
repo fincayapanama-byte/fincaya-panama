@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
+import { useAuth } from '../lib/auth'
 import { useAsync } from '../lib/useAsync'
 import { BRAND, PROVINCES, money, slugify, waLink } from '../lib/config'
-import { IcoMap, IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, handle } from '../components/icons'
+import { IcoMap, IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, CatIcon, handle } from '../components/icons'
 import { FarmsMap } from '../components/FarmMap'
 import { ACTIVITIES, PROVINCE_CENTER, activity } from '../lib/geo'
 import { AdSlot, Ago, FavButton, Grid, Loading, PriceTable, Seo, Sparkline, Verified, ListingCard } from '../components/ui'
@@ -40,7 +41,7 @@ function HeroSearch({ cats }) {
     nav(`/buscar${params.toString() ? `?${params}` : ''}`)
   }
   return (
-    <form className="hsearch" onSubmit={submit} role="search">
+    <form className="hsearch" onSubmit={submit} role="search" data-reveal="fade-up" style={{ '--d': '240ms' }}>
       <label className="hsearch__q"><span className="sr">¿Qué estás buscando?</span>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="¿Qué estás buscando?" /></label>
       <label><span className="sr">Categoría</span>
@@ -80,19 +81,29 @@ export function Home() {
       <section className="hero">
         <div className="wrap">
           <p className="eyebrow">{BRAND.tagline}</p>
-          <h1 className="hero__title">Compra, vende y conecta con el agro panameño</h1>
-          <p className="hero__lead">Animales, productos agrícolas, insumos, maquinaria, servicios y fincas de todo Panamá. Contacta directo al productor.</p>
+          <h1 className="hero__title" data-reveal="blur-in">Compra, vende y conecta con el agro panameño</h1>
+          <p className="hero__lead" data-reveal="fade-up" style={{ '--d': '120ms' }}>Animales, productos agrícolas, insumos, maquinaria, servicios y fincas de todo Panamá. Contacta directo al productor.</p>
           <HeroSearch cats={roots} />
         </div>
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Categorías</h2></div>
-        <div className="cats">
-          {roots.map((c) => (
-            <Link key={c.slug} to={`/c/${c.slug}`} className="card cat">
-              <span className="cat__icon" aria-hidden="true">{ICONS[c.slug] || '🌾'}</span>
-              <strong>{c.name}</strong>
+        <div className="section__head section__head--big" data-reveal="fade-up">
+          <div><p className="kicker">Categorías</p><h2>Explora por categoría</h2></div>
+          <Link className="more" to="/buscar" aria-label="Ver todo el directorio"><span className="more__t">Ver todo</span> <IcoArrow /></Link>
+        </div>
+        <div className="ccards">
+          {roots.map((c, i) => (
+            <Link key={c.slug} to={`/c/${c.slug}`} className={`ccard ccard--${c.slug}`} data-reveal="scale-in" style={{ '--d': `${Math.min(i, 8) * 60}ms` }}>
+              <span className="ccard__media" aria-hidden="true">
+                <img src={`/cat/${c.slug}.webp`} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.remove() }} />
+                <CatIcon slug={c.slug} size={54} className="ccard__ph" />
+              </span>
+              <span className="ccard__foot">
+                <CatIcon slug={c.slug} className="ccard__ico" />
+                <span className="ccard__name">{c.name}</span>
+                <span className="ccard__arr" aria-hidden="true"><IcoChevron size={15} /></span>
+              </span>
             </Link>
           ))}
         </div>
@@ -101,18 +112,18 @@ export function Home() {
       <div className="wrap"><AdSlot placement="home_top" /></div>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Anuncios destacados</h2><Link className="more" to="/buscar" aria-label="Ver directorio"><span className="more__t">Ver directorio</span> <IcoArrow /></Link></div>
+        <div className="section__head" data-reveal="fade-up"><h2>Anuncios destacados</h2><Link className="more" to="/buscar" aria-label="Ver directorio"><span className="more__t">Ver directorio</span> <IcoArrow /></Link></div>
         <p className="muted small note">Los destacados tienen mayor visibilidad y se identifican con la etiqueta «Destacado».</p>
         <Grid items={featured.data} empty="Aún no hay anuncios destacados." />
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Anuncios recientes</h2></div>
+        <div className="section__head" data-reveal="fade-up"><h2>Anuncios recientes</h2></div>
         <Grid items={recent.data} empty={<>Aún no hay anuncios. <Link to="/publicar">Publica el primero</Link>.</>} />
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Explorar por provincia</h2></div>
+        <div className="section__head" data-reveal="fade-up"><h2>Explorar por provincia</h2></div>
         <div className="provs">
           {PROVINCES.map((p) => (
             <Link key={p} to={`/buscar?prov=${encodeURIComponent(p)}`} className="prov">
@@ -123,12 +134,12 @@ export function Home() {
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Fincas cerca de ti</h2><Link className="more" to="/mapa" aria-label="Abrir mapa"><span className="more__t">Abrir mapa</span> <IcoMap className="ico more__map" /><IcoArrow className="ico more__arr" /></Link></div>
+        <div className="section__head" data-reveal="fade-up"><h2>Fincas cerca de ti</h2><Link className="more" to="/mapa" aria-label="Abrir mapa"><span className="more__t">Abrir mapa</span> <IcoMap className="ico more__map" /><IcoArrow className="ico more__arr" /></Link></div>
         <FarmsMapPage embedded />
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Precios del día</h2><Link className="more" to="/precios" aria-label="Ver todos los precios"><span className="more__t">Ver todos</span> <IcoArrow /></Link></div>
+        <div className="section__head" data-reveal="fade-up"><h2>Precios del día</h2><Link className="more" to="/precios" aria-label="Ver todos los precios"><span className="more__t">Ver todos</span> <IcoArrow /></Link></div>
         <div className="chips" role="tablist">
           {[['alza', '▲ Mayores alzas'], ['baja', '▼ Mayores bajas'], ['destacados', 'Destacados']].map(([k, t]) => (
             <button key={k} role="tab" aria-selected={priceView === k} className={`chip ${priceView === k ? 'is-on' : ''}`} onClick={() => setPriceView(k)}>{t}</button>
@@ -141,11 +152,11 @@ export function Home() {
       </section>
 
       <section className="wrap section">
-        <div className="section__head"><h2>Cómo funciona</h2></div>
+        <div className="section__head" data-reveal="fade-up"><h2>Cómo funciona</h2></div>
         <div className="how">
-          <div className="how__step"><span className="how__n">1</span><h3>Busca</h3><p>Filtra por categoría y provincia, o escribe lo que necesitas.</p></div>
-          <div className="how__step"><span className="how__n">2</span><h3>Compara</h3><p>Revisa fotos, precio, ubicación y el perfil de cada productor.</p></div>
-          <div className="how__step"><span className="how__n">3</span><h3>Contacta</h3><p>Escribe directo por WhatsApp o llama. Sin intermediarios.</p></div>
+          <div className="how__step" data-reveal="fade-up"><span className="how__n">1</span><h3>Busca</h3><p>Filtra por categoría y provincia, o escribe lo que necesitas.</p></div>
+          <div className="how__step" data-reveal="fade-up"><span className="how__n">2</span><h3>Compara</h3><p>Revisa fotos, precio, ubicación y el perfil de cada productor.</p></div>
+          <div className="how__step" data-reveal="fade-up"><span className="how__n">3</span><h3>Contacta</h3><p>Escribe directo por WhatsApp o llama. Sin intermediarios.</p></div>
         </div>
       </section>
 
@@ -596,6 +607,39 @@ export function Safety() {
         <li>Desconfía de precios muy por debajo del <Link to="/precios">precio del día</Link>.</li>
         <li>Si algo no cuadra, usa el botón <strong>Reportar anuncio</strong>.</li>
       </ol>
+    </div>
+  )
+}
+
+export function DeleteAccount() {
+  const { user } = useAuth()
+  const msg = `Hola ${BRAND.name}, quiero eliminar mi cuenta y mis datos. Correo de la cuenta: ${user?.email || '(escribe tu correo)'}`
+  return (
+    <div className="wrap section narrow">
+      <Seo title="Eliminar mi cuenta" description="Cómo solicitar la eliminación de tu cuenta y tus datos en FincaYa Panamá." />
+      <h1 className="h1">Eliminar mi cuenta</h1>
+      <p className="prose">Puedes pedir en cualquier momento que eliminemos tu cuenta de <strong>{BRAND.name}</strong> y los datos asociados. Lo hacemos en un máximo de <strong>7 días</strong> y te confirmamos por el mismo medio.</p>
+      <h2 className="h2">Cómo solicitarlo</h2>
+      <ol className="prose list">
+        <li>Escríbenos por WhatsApp o correo desde el botón de abajo, indicando el correo con el que te registraste.</li>
+        <li>Verificamos que la solicitud venga del dueño de la cuenta.</li>
+        <li>Eliminamos la cuenta y te avisamos.</li>
+      </ol>
+      <div className="del-actions">
+        <a className="btn btn--wa" href={waLink(BRAND.whatsapp, msg)} target="_blank" rel="noopener">Solicitar por WhatsApp</a>
+        <a className="btn btn--ghost" href={`mailto:hola@fincayapanama.com?subject=${encodeURIComponent('Eliminar mi cuenta')}&body=${encodeURIComponent(msg)}`}>Solicitar por correo</a>
+      </div>
+      <h2 className="h2">Qué se elimina</h2>
+      <ul className="prose list">
+        <li>Tu cuenta (correo, nombre y teléfono).</li>
+        <li>Tu finca, tus anuncios, fotos, favoritos y avisos.</li>
+        <li>Los celulares registrados para notificaciones.</li>
+      </ul>
+      <h2 className="h2">Qué se conserva</h2>
+      <ul className="prose list">
+        <li>Las publicaciones ya hechas en nuestras redes sociales pueden permanecer hasta que las borremos manualmente (lo hacemos si lo pides).</li>
+        <li>Registros técnicos anónimos y reportes de fraude, hasta 90 días, por seguridad.</li>
+      </ul>
     </div>
   )
 }

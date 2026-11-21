@@ -13,3 +13,18 @@ export const IcoArrow = (p) => <S size={18} fill="none" stroke="currentColor" st
 export const IcoChevron = (p) => <S size={18} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m9 6 6 6-6 6"/></S>
 export const IcoMap = (p) => <S fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z"/><path d="M9 4v13M15 6.5v13"/></S>
 export const handle = (s) => String(s || '').trim().replace(/^https?:\/\/[^/]+\//, '').replace(/^@+/, '').replace(/\/$/, '')
+
+// Iconos de línea por categoría (trazo fino, estilo uniforme)
+const L = (p) => <S size={26} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p} />
+const CAT_PATHS = {
+  ganaderia: <><path d="M5 9c-1.7 0-3-1.2-3-2.6L4 6l2 1h12l2-1 2 .4C22 7.8 20.7 9 19 9"/><path d="M6 7.5c0 4 1.2 8.5 3 10.5h6c1.8-2 3-6.5 3-10.5"/><path d="M9.5 18v1.5a2.5 2.5 0 0 0 5 0V18"/><circle cx="9.5" cy="11.5" r=".6" fill="currentColor"/><circle cx="14.5" cy="11.5" r=".6" fill="currentColor"/></>,
+  porcicultura: <><path d="M4 12.5C4 9 7.6 6.5 12 6.5c3 0 5.6 1.1 6.9 2.9L21 9v4l-1.6.6c-.6 2.6-3 4.6-6 5V21h-2v-2.4h-3V21h-2v-3.2C5 16.6 4 14.7 4 12.5z"/><path d="M6.5 7.8 6 5l2.6 1.6"/><circle cx="15.5" cy="10.8" r=".6" fill="currentColor"/><path d="M4 12.5c-1 0-2-.6-2-1.6"/></>,
+  avicultura: <><path d="M8 20h8"/><path d="M10 20v-2.2M14 20v-2.2"/><path d="M6 10.5C6 7 8.5 4 12 4c2 0 3.2 1 3.8 2.3L18 7l-1.8 1.2c.5 1 .8 2.1.8 3.3 0 3.6-2.5 6.3-6 6.3s-5-2.6-5-5.2c-1.6-.3-2.5-1.2-2.5-2.4L6 10.5z"/><circle cx="13.8" cy="7.5" r=".6" fill="currentColor"/><path d="M11.5 4c.2-1 1-1.8 2-2"/></>,
+  ovinocultura: <><path d="M7.5 9.5a2.5 2.5 0 0 1 4-2 2.5 2.5 0 0 1 4.3.8 2.5 2.5 0 0 1 2.2 4 2.5 2.5 0 0 1-2 4H8a2.5 2.5 0 0 1-2-4 2.5 2.5 0 0 1 1.5-2.8z"/><path d="M9 16.3V20M15 16.3V20"/><path d="M6 11.5 3.5 10.8c0-1.6 1-2.8 2.5-2.8"/></>,
+  agricultura: <><path d="M12 21v-9"/><path d="M12 12C12 8 9 5 4.5 5 4.5 9 7.5 12 12 12z"/><path d="M12 15c0-4 3-7 7.5-7 0 4-3 7-7.5 7z"/><path d="M5 21h14"/></>,
+  insumos: <><path d="M6 8h12l-1.2 12.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8z"/><path d="M8.5 8V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V8"/><path d="M12 11.5c1.6 1.8 2.3 3 2.3 4a2.3 2.3 0 0 1-4.6 0c0-1 .7-2.2 2.3-4z"/></>,
+  maquinaria: <><circle cx="7" cy="16.5" r="3.5"/><circle cx="7" cy="16.5" r=".8" fill="currentColor"/><circle cx="18" cy="18" r="2"/><path d="M10.5 16.5H16M3.5 14V9.5h7l1.5 4.5h6.5a2 2 0 0 1 2 2v2"/><path d="M5.5 9.5V5h4l1 4.5"/><path d="M15 14V8"/></>,
+  servicios: <><path d="M10.5 6.5a4 4 0 0 1 5.2-3.8l-2.4 2.4.6 2.4 2.4.6 2.4-2.4a4 4 0 0 1-5.1 5.2L7 17.5a1.8 1.8 0 0 1-2.5-2.5l6.6-6.6c-.4-.6-.6-1.2-.6-1.9z"/></>,
+  'fincas-propiedades': <><path d="M3 11 12 4l9 7"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/><path d="M2 20h20"/></>,
+}
+export const CatIcon = ({ slug, ...p }) => <L {...p}>{CAT_PATHS[slug] || CAT_PATHS.agricultura}</L>
