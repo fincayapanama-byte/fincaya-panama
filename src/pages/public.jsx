@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -53,6 +53,20 @@ function HeroSearch({ cats }) {
   )
 }
 
+// Carrusel horizontal: flechas que avanzan una "página" y saben si hay más a cada lado
+function useRail(deps) {
+  const ref = useRef(null)
+  const [st, setSt] = useState({ prev: false, next: false })
+  useEffect(() => {
+    const el = ref.current; if (!el) return
+    const upd = () => setSt({ prev: el.scrollLeft > 4, next: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 })
+    upd(); el.addEventListener('scroll', upd, { passive: true }); window.addEventListener('resize', upd)
+    return () => { el.removeEventListener('scroll', upd); window.removeEventListener('resize', upd) }
+  }, deps)
+  const go = (dir) => { const el = ref.current; if (el) el.scrollBy({ left: dir * el.clientWidth, behavior: 'smooth' }) }
+  return { ref, go, ...st }
+}
+
 export function Home() {
   const cats = useAsync(() => api.categories(), [])
   const featured = useAsync(() => api.listings({ featured: true, limit: 8 }), [])
@@ -73,6 +87,7 @@ export function Home() {
   }, [prices.data, priceView])
   const counts = useAsync(() => api.provinceCounts(), [])
   const roots = (cats.data || []).filter((c) => !c.parent_slug)
+  const rail = useRail([roots.length])
   return (
     <>
       <Seo description="Compra, vende y conecta con el agro panameño: animales, productos agrícolas, insumos, maquinaria, servicios y fincas por provincia."
@@ -90,9 +105,14 @@ export function Home() {
       <section className="wrap section">
         <div className="section__head section__head--big" data-reveal="fade-up">
           <div><p className="kicker">Categorías</p><h2>Explora por categoría</h2></div>
-          <Link className="more" to="/buscar" aria-label="Ver todo el directorio"><span className="more__t">Ver todo</span> <IcoArrow /></Link>
+          <div className="ccnav">
+            <button type="button" className="ccnav__b" onClick={() => rail.go(-1)} disabled={!rail.prev} aria-label="Categorías anteriores"><IcoChevron style={{ transform: 'rotate(180deg)' }} /></button>
+            <button type="button" className="ccnav__b" onClick={() => rail.go(1)} disabled={!rail.next} aria-label="Más categorías"><IcoChevron /></button>
+            <Link className="more" to="/buscar" aria-label="Ver todo el directorio"><span className="more__t">Ver todo</span> <IcoArrow /></Link>
+          </div>
         </div>
-        <div className="ccards">
+        <div className={`ccwrap ${rail.next ? 'has-next' : ''} ${rail.prev ? 'has-prev' : ''}`}>
+        <div className="ccards" ref={rail.ref}>
           {roots.map((c, i) => (
             <Link key={c.slug} to={`/c/${c.slug}`} className={`ccard ccard--${c.slug}`} data-reveal="scale-in" style={{ '--d': `${Math.min(i, 8) * 60}ms` }}>
               <span className="ccard__media" aria-hidden="true">
@@ -106,6 +126,7 @@ export function Home() {
               </span>
             </Link>
           ))}
+        </div>
         </div>
       </section>
 

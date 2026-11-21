@@ -647,3 +647,15 @@ select { text-overflow: ellipsis; }
   .ccards { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: calc((100% - 4 * 14px) / 5.35); overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 18px; margin: -4px -2px 0; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
   .ccard { scroll-snap-align: start; }
 }
+/* Carrusel de categorías: tarjetas completas + flechas, sin barra de scroll */
+.ccnav { display: flex; align-items: center; gap: 8px; }
+.ccnav__b { display: none; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--green-600); background: var(--white); color: var(--green-900); cursor: pointer; transition: background .2s, color .2s, opacity .2s; }
+.ccnav__b:hover:not(:disabled) { background: var(--green-900); color: #fff; }
+.ccnav__b:disabled { opacity: .35; cursor: default; }
+.ccwrap { position: relative; }
+@media (min-width: 761px) {
+  .ccnav__b { display: grid; }
+  .ccards { --n: 5; grid-auto-columns: calc((100% - (var(--n) - 1) * 14px) / var(--n)); scrollbar-width: none; padding-bottom: 8px; }
+  .ccards::-webkit-scrollbar { display: none; }
+}
+@media (min-width: 761px) and (max-width: 1023px) { .ccards { --n: 4; } }
