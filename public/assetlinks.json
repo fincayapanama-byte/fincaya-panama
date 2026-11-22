@@ -4,7 +4,7 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.fincayapanama.app",
-      "sha256_cert_fingerprints": ["88:51:11:03:4F:5A:B7:8C:27:36:91:9C:13:AE:FC:D8:3D:E8:67:9F:28:FB:D2:78:82:7C:45:B7:FE:44:BD:74"]
+      "sha256_cert_fingerprints": ["88:51:11:03:4F:5A:B7:8C:27:36:91:9C:13:AE:FC:D8:3D:E8:67:9F:28:FB:D2:78:82:7C:45:B7:FE:44:BD:74", "3A:2F:B6:AC:D3:BC:77:C5:63:67:00:C9:60:71:B8:57:CE:38:84:18:70:5F:B6:9F:24:47:8A:A3:1B:FF:FF:9D"]
     }
   }
 ]
