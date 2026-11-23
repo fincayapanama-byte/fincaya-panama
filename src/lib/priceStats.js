@@ -64,3 +64,26 @@ export function monthlyTrends(rows, { n = 6, minPoints = 8 } = {}) {
   const pick = [...ups.slice(0, Math.max(half, n - downs.length)), ...downs.slice(0, Math.max(n - half, n - ups.length))].slice(0, n)
   return { day, from, series: pick.sort((a, b) => b.change - a.change) }
 }
+
+// Igual que monthlyTrends pero desde el resumen (prices_summary: una serie de valores por producto, ordenada por fecha).
+// Más liviano para la portada: una sola consulta.
+export function trendsFromSummary(rows, { n = 10 } = {}) {
+  const out = []
+  for (const r of rows || []) {
+    if (r.source !== 'IMA') continue
+    const raw = (r.values || []).map(Number).filter((v) => v > 0)
+    if (raw.length < 8) continue
+    const md = median(raw)
+    const vals = raw.filter((v) => v <= md * 2 && v >= md / 2)
+    if (vals.length < 8) continue
+    const first = median(vals.slice(0, 3)), last = Number(r.price)
+    if (!first || !(last <= md * 2 && last >= md / 2)) continue
+    const change = (last - first) / first
+    out.push({ ...r, vals, first, last, change, score: Math.abs(change) * (isStaple(r.product_slug) ? 1.6 : 1) })
+  }
+  const sorted = out.filter((s) => Math.abs(s.change) >= 0.03).sort((a, b) => b.score - a.score)
+  const ups = sorted.filter((s) => s.change > 0), downs = sorted.filter((s) => s.change < 0)
+  const half = Math.ceil(n / 2)
+  return [...ups.slice(0, Math.max(half, n - downs.length)), ...downs.slice(0, Math.max(n - half, n - ups.length))]
+    .slice(0, n).sort((a, b) => b.change - a.change)
+}

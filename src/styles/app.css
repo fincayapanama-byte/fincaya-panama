@@ -661,3 +661,29 @@ select { text-overflow: ellipsis; }
 @media (min-width: 761px) and (max-width: 1023px) { .ccards { --n: 4; } }
 .btn--danger { color: var(--danger); border-color: #E7B4AE; }
 .btn--danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+/* ===== Tendencia del mes (portada) ===== */
+:root { --trend-up: #C0392B; --trend-down: #16803C; }
+.trend { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 4px 0 10px; }
+.trend__card { display: flex; flex-direction: column; min-width: 0; padding: 12px 14px 10px; background: var(--white); border: 1px solid var(--border); border-radius: 14px; text-decoration: none; color: var(--ink); box-shadow: 0 3px 6px rgba(11, 93, 59, .04); transition: transform .2s, box-shadow .2s; }
+.trend__card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(11, 93, 59, .12); }
+.trend__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.trend__name { font-family: var(--display); font-weight: 700; font-size: 14.5px; line-height: 1.2; color: var(--green-900); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.trend__chg { flex: none; font-weight: 800; font-size: 13px; padding: 2px 7px; border-radius: 999px; }
+.trend__chg.is-up { color: var(--trend-up); background: #FDECEA; }
+.trend__chg.is-down { color: var(--trend-down); background: #E7F5EC; }
+.trend__unit { font-size: 12px; color: var(--muted); margin: 2px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trend__svg { width: 100%; height: 56px; display: block; }
+.trend__foot { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.trend__foot strong { font-size: 15px; color: var(--green-900); }
+.trend__card--sk { height: 150px; background: linear-gradient(90deg, #EEF1EA 25%, #F6F8F3 50%, #EEF1EA 75%); background-size: 200% 100%; animation: sk 1.2s infinite linear; }
+@keyframes sk { to { background-position: -200% 0; } }
+@media (max-width: 1100px) { .trend { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .trend { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .trend { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .trend__card { padding: 10px 10px 8px; }
+  .trend__name { font-size: 13.5px; }
+  .trend__chg { font-size: 12px; padding: 1px 6px; }
+  .trend__svg { height: 46px; }
+}

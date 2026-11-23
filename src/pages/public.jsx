@@ -7,6 +7,8 @@ import { BRAND, PROVINCES, money, slugify, waLink } from '../lib/config'
 import { IcoMap, IcoArrow, IcoChevron, IcoFacebook, IcoGlobe, IcoInstagram, IcoMail, IcoPhone, IcoTikTok, IcoWhatsApp, CatIcon, handle } from '../components/icons'
 import { FarmsMap } from '../components/FarmMap'
 import { ACTIVITIES, PROVINCE_CENTER, activity } from '../lib/geo'
+import TrendGrid from '../components/TrendGrid'
+import { trendsFromSummary } from '../lib/priceStats'
 import { AdSlot, Ago, FavButton, Grid, Loading, PriceTable, Seo, Sparkline, Verified, ListingCard } from '../components/ui'
 
 // Ordena el resumen de precios. En alza/baja, lo más reciente va primero ante empates.
@@ -72,7 +74,9 @@ export function Home() {
   const featured = useAsync(() => api.listings({ featured: true, limit: 8 }), [])
   const recent = useAsync(() => api.listings({ limit: 8 }), [])
   const prices = useAsync(() => api.prices({ days: 10 }), [])
-  const [priceView, setPriceView] = useState('alza')
+  const [priceView, setPriceView] = useState('tendencia')
+  const month = useAsync(() => api.prices({ days: 31, market: 'Merca Panamá' }), [])
+  const trends = useMemo(() => (month.data ? trendsFromSummary(month.data, { n: 10 }) : null), [month.data])
   const homePrices = useMemo(() => {
     const all = prices.data
     if (!all) return null
@@ -162,14 +166,15 @@ export function Home() {
       <section className="wrap section">
         <div className="section__head" data-reveal="fade-up"><h2>Precios del día</h2><Link className="more" to="/precios" aria-label="Ver todos los precios"><span className="more__t">Ver todos</span> <IcoArrow /></Link></div>
         <div className="chips" role="tablist">
-          {[['alza', '▲ Mayores alzas'], ['baja', '▼ Mayores bajas'], ['destacados', 'Destacados']].map(([k, t]) => (
+          {[['tendencia', '📈 Tendencia del mes'], ['alza', '▲ Mayores alzas'], ['baja', '▼ Mayores bajas'], ['destacados', 'Destacados']].map(([k, t]) => (
             <button key={k} role="tab" aria-selected={priceView === k} className={`chip ${priceView === k ? 'is-on' : ''}`} onClick={() => setPriceView(k)}>{t}</button>
           ))}
         </div>
-        {homePrices && !homePrices.length && priceView !== 'destacados'
-          ? <p className="empty">Hoy no hay {priceView === 'alza' ? 'alzas' : 'bajas'} respecto al día anterior en Merca Panamá.</p>
-          : <PriceTable rows={homePrices} compact />}
-        <p className="muted small">Merca Panamá · fuente <a href="https://sipan.ima.gob.pa" target="_blank" rel="noopener">IMA</a>. Variación contra el día anterior.</p>
+        {priceView === 'tendencia' ? <TrendGrid items={trends} />
+          : homePrices && !homePrices.length && priceView !== 'destacados'
+            ? <p className="empty">Hoy no hay {priceView === 'alza' ? 'alzas' : 'bajas'} respecto al día anterior en Merca Panamá.</p>
+            : <PriceTable rows={homePrices} compact />}
+        <p className="muted small">Merca Panamá · fuente <a href="https://sipan.ima.gob.pa" target="_blank" rel="noopener">IMA</a>. {priceView === 'tendencia' ? 'Precio diario de los últimos 30 días; los 10 productos que más se movieron. Toca uno para ver su historial.' : 'Variación contra el día anterior.'}</p>
       </section>
 
       <section className="wrap section">
