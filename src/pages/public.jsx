@@ -69,6 +69,13 @@ function useRail(deps) {
   return { ref, go, ...st }
 }
 
+const PRICE_TABS = [
+  ['tendencia', 'Tendencia del mes', 'Tendencia', <><path d="M3 17l5-5 4 4 8-8" /><path d="M14 8h6v6" /></>],
+  ['alza', 'Mayores alzas', 'Alzas', <><path d="M12 19V5" /><path d="m5 12 7-7 7 7" /></>],
+  ['baja', 'Mayores bajas', 'Bajas', <><path d="M12 5v14" /><path d="m19 12-7 7-7-7" /></>],
+  ['destacados', 'Destacados', 'Destacados', <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" />],
+]
+
 export function Home() {
   const cats = useAsync(() => api.categories(), [])
   const featured = useAsync(() => api.listings({ featured: true, limit: 8 }), [])
@@ -165,9 +172,12 @@ export function Home() {
 
       <section className="wrap section">
         <div className="section__head" data-reveal="fade-up"><h2>Precios del día</h2><Link className="more" to="/precios" aria-label="Ver todos los precios"><span className="more__t">Ver todos</span> <IcoArrow /></Link></div>
-        <div className="chips" role="tablist">
-          {[['tendencia', '📈 Tendencia del mes'], ['alza', '▲ Mayores alzas'], ['baja', '▼ Mayores bajas'], ['destacados', 'Destacados']].map(([k, t]) => (
-            <button key={k} role="tab" aria-selected={priceView === k} className={`chip ${priceView === k ? 'is-on' : ''}`} onClick={() => setPriceView(k)}>{t}</button>
+        <div className="pseg" role="tablist" aria-label="Vista de precios">
+          {PRICE_TABS.map(([k, full, short, ico]) => (
+            <button key={k} role="tab" aria-selected={priceView === k} aria-label={full} className={`pseg__b ${priceView === k ? 'is-on' : ''}`} onClick={() => setPriceView(k)}>
+              <svg className="pseg__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ico}</svg>
+              <span className="pseg__full">{full}</span><span className="pseg__short">{short}</span>
+            </button>
           ))}
         </div>
         {priceView === 'tendencia' ? <TrendGrid items={trends} />
