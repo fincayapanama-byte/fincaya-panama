@@ -393,6 +393,12 @@ export const api = {
       ok(await supabase.from('profiles').update(patch).eq('id', id))
     },
     async farms() { return api.farms() },
+    // Borra la finca y, en cascada, sus anuncios, comentarios, favoritos y reportes
+    async deleteFarm(id) {
+      if (DEMO) { const db = load(); db.farms = db.farms.filter((f) => f.id !== id); db.listings = db.listings.filter((l) => l.farm_id !== id); save(); return }
+      const { count } = await supabase.from('farms').delete({ count: 'exact' }).eq('id', id)
+      if (!count) throw new Error('No se pudo borrar la finca (revisa que tu usuario sea admin).')
+    },
     async setFarm(id, patch) {
       if (DEMO) { Object.assign(load().farms.find((f) => f.id === id), patch); save(); return }
       ok(await supabase.from('farms').update(patch).eq('id', id))

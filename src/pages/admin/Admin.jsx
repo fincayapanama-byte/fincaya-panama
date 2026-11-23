@@ -150,16 +150,22 @@ function Users() {
 
 function Farms() {
   const { data, reload } = useAsync(() => api.admin.farms(), [])
+  const del = async (f) => {
+    const txt = prompt(`Vas a BORRAR la finca "${f.name}" con todos sus anuncios, comentarios y favoritos. No se puede deshacer.\n\nEscribe BORRAR para confirmar:`)
+    if (txt?.trim().toUpperCase() !== 'BORRAR') return
+    try { await api.admin.deleteFarm(f.id); reload() } catch (e) { alert(e.message || String(e)) }
+  }
   if (!data) return <Loading />
   return (
     <div className="table-wrap"><table className="table">
-      <thead><tr><th>Finca</th><th>Ubicación</th><th>Contacto</th><th>Verificación</th></tr></thead>
+      <thead><tr><th>Finca</th><th>Ubicación</th><th>Contacto</th><th>Verificación</th><th></th></tr></thead>
       <tbody>{data.map((f) => (
         <tr key={f.id}>
           <td><Link to={`/finca/${f.slug}`}>{f.name}</Link></td>
           <td>{[f.district, f.province].filter(Boolean).join(', ')}</td>
           <td className="small">{f.whatsapp}<br />{f.email}</td>
           <td><button className={`btn btn--xs ${f.verified ? 'btn--fill' : 'btn--ghost'}`} onClick={() => api.admin.setFarm(f.id, { verified: !f.verified }).then(reload)}>{f.verified ? '✔ Verificada' : 'Marcar verificada'}</button></td>
+          <td><button className="btn btn--ghost btn--xs btn--danger" onClick={() => del(f)} title="Borrar finca y sus anuncios">Borrar</button></td>
         </tr>
       ))}</tbody>
     </table></div>

@@ -659,3 +659,5 @@ select { text-overflow: ellipsis; }
   .ccards::-webkit-scrollbar { display: none; }
 }
 @media (min-width: 761px) and (max-width: 1023px) { .ccards { --n: 4; } }
+.btn--danger { color: var(--danger); border-color: #E7B4AE; }
+.btn--danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
