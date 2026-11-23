@@ -187,6 +187,20 @@ export const api = {
       change: r.prev_price ? (Number(r.price) - Number(r.prev_price)) / Number(r.prev_price) : 0,
     }))
   },
+  // Historial completo de un mercado (con fechas), para comparar semanas y graficar tendencias
+  async priceHistory({ market = 'Merca Panamá', days = 35 } = {}) {
+    const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
+    if (DEMO) return load().prices.filter((p) => p.approved && p.date >= since && p.market === market)
+    const out = []
+    for (let from = 0; from < 20000; from += 1000) {
+      const rows = ok(await supabase.from('prices').select('product_slug,product_name,unit,price,date,source')
+        .eq('approved', true).eq('market', market).eq('source', 'IMA').gte('date', since)
+        .order('date', { ascending: true }).order('product_slug').range(from, from + 999)) || []
+      out.push(...rows)
+      if (rows.length < 1000) break
+    }
+    return out
+  },
   // Historial de un producto (todas las fuentes y mercados)
   async productPrices(slug, { days = 60 } = {}) {
     const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)

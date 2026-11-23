@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BRAND } from '../../lib/config'
-import { composeBrandImage, composePricesImage } from '../../lib/brandImage'
+import { composeBrandImage, composePricesImage, composeTrendImage } from '../../lib/brandImage'
+import { weeklyChanges, monthlyTrends, fechaLarga, fechaCorta } from '../../lib/priceStats'
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -325,37 +326,60 @@ function BrandPosts() {
     catch (err) { alert(err.message || 'No se pudo preparar la imagen') }
     finally { setUp(false); e.target.value = '' }
   }
-  const [mk, setMk] = useState(false)
-  // Arma la publicación diaria de precios: imagen con la tabla + texto con alzas y bajas
-  const makePrices = async () => {
-    setMk(true)
+  const [mk, setMk] = useState('')
+  // Historial de Merca Panamá; si faltan semanas, lo completa desde el IMA (solo admin)
+  const history = async () => {
+    let rows = await api.priceHistory({ market: 'Merca Panamá', days: 35 })
+    const first = rows[0]?.date, last = rows[rows.length - 1]?.date
+    if (!rows.length || (Date.parse(last) - Date.parse(first)) / 864e5 < 25) {
+      await api.admin.syncIma(35)
+      rows = await api.priceHistory({ market: 'Merca Panamá', days: 35 })
+    }
+    if (!rows.length) throw new Error('Aún no hay precios del IMA. Sincroniza en Admin → Precios.')
+    return rows
+  }
+  const line = (p) => `• ${p.product_name}: B/. ${Number(p.price).toFixed(2)} / ${p.unit} (${p.change > 0 ? '▲' : '▼'} ${(Math.abs(p.change) * 100).toFixed(1)}%)`
+  // Publicación de precios: hoy contra hace una semana (solo variaciones de 3 % o más)
+  const makeWeekly = async () => {
+    setMk('week')
     try {
-      const all = await api.prices({ days: 10, market: 'Merca Panamá' })
-      const day = all.reduce((m, p) => (p.date > m ? p.date : m), '')
-      const today = all.filter((p) => p.date === day && p.source === 'IMA')
-      if (!today.length) throw new Error('Aún no hay precios del IMA para hoy. Sincroniza en Admin → Precios.')
-      const ups = today.filter((p) => p.change > 0).sort((a, b) => b.change - a.change)
-      const downs = today.filter((p) => p.change < 0).sort((a, b) => a.change - b.change)
-      const KEY = ['name', 'yuca', 'otoe', 'platano', 'tomate', 'cebolla', 'papa', 'arroz-pilado']
-      const featured = today.filter((p) => KEY.some((k) => p.product_slug.startsWith(k)))
-      const pick = [...ups.slice(0, 4), ...downs.slice(0, 4)]
-      for (const f of featured) if (pick.length < 8 && !pick.includes(f)) pick.push(f)
-      const [y, m, d] = day.split('-').map(Number)
-      const fecha = `${d} de ${['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][m - 1]}`
-      const file = await composePricesImage(pick, { title: 'Precios de hoy', subtitle: `Merca Panamá · ${fecha} de ${y}` })
-      const url = await api.uploadImage(user, file)
-      const line = (p) => `• ${p.product_name}: B/. ${Number(p.price).toFixed(2)} / ${p.unit} (${p.change > 0 ? '▲' : '▼'} ${(Math.abs(p.change) * 100).toFixed(1)}%)`
-      setImg(url)
+      const w = weeklyChanges(await history())
+      if (!w.total) throw new Error('No hay precios de hace una semana para comparar. Sincroniza 30 días en Admin → Precios.')
+      const pick = [...w.ups.slice(0, 4), ...w.downs.slice(0, 4)]
+      for (const s of w.stable) if (pick.length < 8) pick.push(s)
+      const y = w.day.slice(0, 4)
+      const file = await composePricesImage(pick, { title: 'Precios de la semana', subtitle: `Merca Panamá · ${fechaCorta(w.prevDate)} → ${fechaLarga(w.day)} de ${y}`, note: 'Variación vs. hace 7 días', file: 'precios-semana.jpg' })
+      setImg(await api.uploadImage(user, file))
       setText([
-        `📊 Precios de hoy en Merca Panamá · ${fecha}`,
-        ups.length ? `\n🔺 Suben:\n${ups.slice(0, 4).map(line).join('\n')}` : '',
-        downs.length ? `\n🔻 Bajan:\n${downs.slice(0, 4).map(line).join('\n')}` : '',
-        `\n👉 Los ${today.length} precios del día, con historial: ${BRAND.url}/precios`,
-        `📲 ¿Vendes ñame, yuca, plátano, ganado o cerdos? Publica gratis en ${BRAND.url}/publicar`,
-        `\nFuente: IMA (Instituto de Mercadeo Agropecuario).`,
-        `#PreciosDelDía #MercaPanamá #AgroPanamá #FincaYaPanamá #ProductoresPanameños #Panamá`,
+        `📊 Así se movieron los precios esta semana en Merca Panamá (${fechaCorta(w.prevDate)} → ${fechaLarga(w.day)})`,
+        w.ups.length ? `\n🔺 Subieron:\n${w.ups.slice(0, 5).map(line).join('\n')}` : '',
+        w.downs.length ? `\n🔻 Bajaron:\n${w.downs.slice(0, 5).map(line).join('\n')}` : '',
+        !w.ups.length && !w.downs.length ? '\n✅ Semana estable: ningún producto varió más de 3 %.' : '',
+        `\n👉 Los ${w.total} precios con su historial: ${BRAND.url}/precios`,
+        `📲 ¿Produces? Publica gratis en ${BRAND.url}/publicar`,
+        `\nFuente: IMA (Instituto de Mercadeo Agropecuario). Comparación con el precio de hace 7 días.`,
+        `#PreciosDeLaSemana #MercaPanamá #AgroPanamá #FincaYaPanamá #ProductoresPanameños #Panamá`,
       ].filter(Boolean).join('\n'))
-    } catch (err) { alert(err.message || String(err)) } finally { setMk(false) }
+    } catch (err) { alert(err.message || String(err)) } finally { setMk('') }
+  }
+  // Publicación de tendencia: los 6 productos que más se movieron en 30 días, con su gráfico
+  const makeTrend = async () => {
+    setMk('month')
+    try {
+      const m = monthlyTrends(await history())
+      if (m.series.length < 2) throw new Error('No hay suficiente historial del mes. Sincroniza 45 días en Admin → Precios.')
+      const file = await composeTrendImage(m.series, { title: 'Tendencia del mes', subtitle: `Merca Panamá · ${fechaCorta(m.from)} → ${fechaLarga(m.day)}` })
+      setImg(await api.uploadImage(user, file))
+      const tl = (s) => `• ${s.product_name}: B/. ${s.first.toFixed(2)} → B/. ${s.last.toFixed(2)} / ${s.unit} (${s.change > 0 ? '▲' : s.change < 0 ? '▼' : '='} ${(Math.abs(s.change) * 100).toFixed(0)}%)`
+      setText([
+        `📈 Tendencia del mes en Merca Panamá: los productos que más se movieron en los últimos 30 días`,
+        `\n${m.series.map(tl).join('\n')}`,
+        `\n💡 Planifica tu siembra y tu venta con datos: el historial completo de cada producto está en ${BRAND.url}/precios`,
+        `📲 Vende directo, sin intermediarios. Publica gratis en ${BRAND.url}/publicar`,
+        `\nFuente: IMA (Instituto de Mercadeo Agropecuario).`,
+        `#TendenciaDePrecios #MercaPanamá #AgroPanamá #FincaYaPanamá #ProductoresPanameños #Panamá`,
+      ].join('\n'))
+    } catch (err) { alert(err.message || String(err)) } finally { setMk('') }
   }
   const publish = async () => {
     if (busy || !confirm(`Se publicará ahora en: ${networks.join(' y ')}. ¿Continuar?`)) return
@@ -367,10 +391,11 @@ function BrandPosts() {
     <>
       <p className="muted">Publica en el Facebook e Instagram de {BRAND.name}: bienvenidas, convocatorias, consejos. Instagram requiere imagen (se convierte a JPG automáticamente; ideal 1080×1350).</p>
       <div className="chips">
-        <button className="chip is-on" onClick={makePrices} disabled={mk}>{mk ? 'Armando…' : '📊 Precios del día (automático)'}</button>
+        <button className="chip is-on" onClick={makeWeekly} disabled={!!mk}>{mk === 'week' ? 'Armando…' : '📊 Precios de la semana'}</button>
+        <button className="chip is-on" onClick={makeTrend} disabled={!!mk}>{mk === 'month' ? 'Armando…' : '📈 Tendencia del mes'}</button>
         {TEMPLATES.map((t) => <button key={t.name} className="chip" onClick={() => setText(t.text)}>{t.name}</button>)}
       </div>
-      <p className="muted small">Consejo: publica los precios del día todas las mañanas después de las 7:30 a. m. Es el contenido que más se comparte en grupos de productores.</p>
+      <p className="muted small">Consejo: «Precios de la semana» compara hoy contra hace 7 días (solo cambios de 3 % o más); ideal lunes y jueves. «Tendencia del mes» muestra con gráfico los 6 productos que más se movieron en 30 días; ideal una vez por semana.</p>
       <div className="brand-grid">
         <div className="card form-card form">
           <Field label={`Texto (${text.length}/2200)`}><textarea rows="14" maxLength={2200} value={text} onChange={(e) => setText(e.target.value)} /></Field>
