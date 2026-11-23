@@ -64,10 +64,14 @@ function Overview() {
 }
 
 const ST = ['pendiente', 'aprobado', 'rechazado', 'vendido', 'vencido']
-// Prepara la imagen con el marco de FincaYa para redes (si falla, se usa la foto original)
+// Prepara la imagen con el marco de FincaYa para redes. Si no se puede, avisa en vez de publicar la foto sin marco.
 async function socialImageFor(user, l) {
   if (!l.images?.[0]) return undefined
-  try { return await api.uploadImage(user, await composeBrandImage(l.images[0])) } catch { return undefined }
+  try { return await api.uploadImage(user, await composeBrandImage(l.images[0])) }
+  catch (e) {
+    if (confirm(`No se pudo poner el marco a la foto (${e.message || e}). ¿Publicar en redes con la foto original sin marco?`)) return undefined
+    throw new Error('Publicación cancelada')
+  }
 }
 
 function Listings() {
@@ -79,9 +83,25 @@ function Listings() {
     if (busyId) return
     setBusyId(l.id)
     try {
+      if (patch.status === 'aprobado') await api.admin.repairListingImages(user, l).then((r) => { if (r.fixed) l = { ...l, images: r.images } })
       const socialImage = patch.status === 'aprobado' ? await socialImageFor(user, l) : undefined
       await api.admin.setListing(l.id, patch, { socialImage }); reload()
-    } finally { setBusyId(null) }
+    } catch (e) { alert(e.message || String(e)) } finally { setBusyId(null) }
+  }
+  // Repara fotos HEIC y, si se pide, vuelve a publicar en redes con el marco
+  const repair = async (l) => {
+    if (busyId) return
+    setBusyId(l.id)
+    try {
+      const r = await api.admin.repairListingImages(user, l)
+      alert(r.fixed ? `✅ ${r.fixed} foto(s) convertidas a JPG.` : 'Las fotos de este anuncio ya están bien.')
+      if (l.status === 'aprobado' && confirm('¿Volver a publicar este anuncio en Facebook e Instagram con el marco de FincaYa?\n\nAntes borra a mano la publicación anterior en Facebook e Instagram para que no quede repetida.')) {
+        await api.admin.resetSocial(l.id)
+        await api.admin.publishNow(l.id, await socialImageFor(user, { ...l, images: r.images }))
+        alert('Publicado de nuevo. Revisa el resultado en Admin → Redes.')
+      }
+      reload()
+    } catch (e) { alert(e.message || String(e)) } finally { setBusyId(null) }
   }
   return (
     <>
@@ -100,6 +120,7 @@ function Listings() {
                 {l.status !== 'aprobado' && <button className="btn btn--fill btn--xs" disabled={!!busyId} onClick={() => act(l, { status: 'aprobado', reject_reason: null })}>{busyId === l.id ? 'Publicando… (hasta 30 s)' : 'Aprobar y publicar'}</button>}
                 {l.status !== 'rechazado' && <button className="btn btn--ghost btn--xs" disabled={!!busyId} onClick={() => { const r = prompt('Motivo del rechazo (lo verá el productor):'); if (r) act(l, { status: 'rechazado', reject_reason: r }) }}>Rechazar</button>}
                 <button className="btn btn--ghost btn--xs" disabled={!!busyId} onClick={() => act(l, { featured: !l.featured })}>{l.featured ? 'Quitar destacado' : 'Destacar'}</button>
+                <button className="btn btn--ghost btn--xs" disabled={!!busyId} onClick={() => repair(l)} title="Convierte fotos HEIC a JPG y permite volver a publicar en redes">Reparar fotos / republicar</button>
               </td>
             </tr>
           ))}</tbody>

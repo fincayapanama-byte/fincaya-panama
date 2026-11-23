@@ -1,3 +1,4 @@
+import { toJpeg, urlToJpeg } from './image'
 // Compone una imagen para redes: la foto va detrás y el marco de FincaYa (centro transparente) encima.
 // Devuelve un File JPG de 1080x1080 listo para subir (Instagram solo acepta JPG).
 const fontsReady = async () => { try { await Promise.all(['800 50px Montserrat', '700 32px Inter', '500 20px Inter'].map((f) => document.fonts.load(f))) } catch (_) { /* sin fuentes web, usa Arial */ } }
@@ -12,7 +13,10 @@ const loadImg = (src) => new Promise((res, rej) => {
 
 export async function composeBrandImage(photo, frameSrc = '/plantilla-redes.png') {
   const S = 1080
-  const src = photo instanceof Blob ? URL.createObjectURL(photo) : photo
+  // Siempre pasa por JPG: así las fotos HEIC (que el navegador no sabe abrir) también se enmarcan
+  if (!(photo instanceof Blob)) photo = await urlToJpeg(photo)
+  else photo = await toJpeg(photo, 2000, 0.92)
+  const src = URL.createObjectURL(photo)
   const [img, frame] = await Promise.all([loadImg(src), loadImg(frameSrc)])
   const c = document.createElement('canvas'); c.width = S; c.height = S
   const ctx = c.getContext('2d')
@@ -23,7 +27,7 @@ export async function composeBrandImage(photo, frameSrc = '/plantilla-redes.png'
   const w = img.width * r, h = img.height * r
   ctx.drawImage(img, zx + (zw - w) / 2, zy + (zh - h) / 2, w, h)
   ctx.drawImage(frame, 0, 0, S, S)
-  if (photo instanceof Blob) URL.revokeObjectURL(src)
+  URL.revokeObjectURL(src)
   const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.88))
   return new File([blob], 'fincaya-redes.jpg', { type: 'image/jpeg' })
 }

@@ -49,18 +49,8 @@ const childSlugs = async (cat) => {
 }
 
 
-// Convierte cualquier foto a JPG (máx. 1600 px). Instagram solo acepta JPG y así las fotos pesan menos.
-export async function toJpeg(file, max = 1600, quality = 0.85) {
-  try {
-    const bmp = await createImageBitmap(file)
-    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
-    const c = document.createElement('canvas')
-    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale)
-    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height)
-    ctx.drawImage(bmp, 0, 0, c.width, c.height)
-    return await new Promise((res) => c.toBlob((b) => res(b || file), 'image/jpeg', quality))
-  } catch { return file }
-}
+export { toJpeg } from './image'
+import { toJpeg, isHeic, urlToJpeg } from './image'
 
 function summarizePrices(rows) {
   const by = {}
@@ -446,6 +436,28 @@ export const api = {
     async social() {
       if (DEMO) { const db = load(); return db.social_posts.map((p) => ({ ...p, listing: db.listings.find((l) => l.id === p.listing_id) })).sort((a, b) => b.created_at.localeCompare(a.created_at)) }
       return ok(await supabase.from('social_posts').select('*, listing:listings(title, slug)').order('created_at', { ascending: false }))
+    },
+    // Repara fotos HEIC (no se ven en Chrome/Android): las convierte a JPG y actualiza el anuncio
+    async repairListingImages(user, l) {
+      const imgs = l.images || []; let fixed = 0; const out = []
+      for (const url of imgs) {
+        try {
+          const head = await fetch(url, { headers: { Range: 'bytes=0-31' } }).then((r) => r.blob())
+          if (await isHeic(head)) {
+            const jpg = await urlToJpeg(url)
+            const path = `${user.id}/${Date.now()}-reparada-${fixed}.jpg`
+            ok(await supabase.storage.from('fotos').upload(path, jpg, { cacheControl: '31536000', contentType: 'image/jpeg' }))
+            out.push(supabase.storage.from('fotos').getPublicUrl(path).data.publicUrl); fixed++
+          } else out.push(url)
+        } catch { out.push(url) }
+      }
+      if (fixed) ok(await supabase.from('listings').update({ images: out }).eq('id', l.id))
+      return { fixed, images: out }
+    },
+    // Permite volver a publicar un anuncio en redes (borra primero la publicación mala en Facebook/Instagram)
+    async resetSocial(listingId) {
+      if (DEMO) return
+      ok(await supabase.from('social_posts').update({ status: 'error', error: 'reintento manual' }).eq('listing_id', listingId))
     },
     async publishNow(listingId, socialImage) {
       if (DEMO) { load().social_posts.filter((p) => p.listing_id === listingId).forEach((p) => { p.status = 'publicado'; p.permalink = '#' }); save(); return }
