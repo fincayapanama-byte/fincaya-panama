@@ -1,0 +1,43 @@
+import { Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Header, Footer } from './components/ui'
+import { AutoPush } from './components/Notify'
+import { Home, Search, ListingPage, FarmPage, Farms, FarmsMapPage, Prices, ProductPrice, Safety, About, Faq, Privacy, DeleteAccount, NotFound } from './pages/public'
+import { Login, Publish, Dashboard } from './pages/account'
+import Admin from './pages/admin/Admin'
+
+export default function App() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return (
+    <>
+      <Header />
+      <AutoPush />
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/buscar" element={<Search />} />
+          <Route path="/c/:cat" element={<Search />} />
+          <Route path="/c/:cat/:prov" element={<Search />} />
+          <Route path="/anuncio/:slug" element={<ListingPage />} />
+          <Route path="/finca/:slug" element={<FarmPage />} />
+          <Route path="/fincas" element={<Farms />} />
+          <Route path="/mapa" element={<FarmsMapPage />} />
+          <Route path="/precios" element={<Prices />} />
+          <Route path="/precios/:slug" element={<ProductPrice />} />
+          <Route path="/seguridad" element={<Safety />} />
+          <Route path="/acerca" element={<About />} />
+          <Route path="/preguntas-frecuentes" element={<Faq />} />
+          <Route path="/privacidad" element={<Privacy />} />
+          <Route path="/eliminar-cuenta" element={<DeleteAccount />} />
+          <Route path="/entrar" element={<Login />} />
+          <Route path="/publicar" element={<Publish />} />
+          <Route path="/panel/*" element={<Dashboard />} />
+          <Route path="/admin/*" element={<Admin />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <Footer />
+    </>
+  )
+}
