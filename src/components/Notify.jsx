@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api } from '../lib/api'
+import { useAuth } from '../lib/auth'
 import { Ago, Loading } from './ui'
-import { canInstall, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushState } from '../lib/push'
+import { autoEnablePush, canInstall, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushState } from '../lib/push'
 
 export function Bell({ user }) {
   const [n, setN] = useState(0)
@@ -20,6 +21,13 @@ export function Bell({ user }) {
       {n > 0 && <span className="bell__n">{n > 9 ? '9+' : n}</span>}
     </Link>
   )
+}
+
+// Se monta una vez en la app: activa los avisos solos al iniciar sesión
+export function AutoPush() {
+  const { user } = useAuth()
+  useEffect(() => (user ? autoEnablePush(user) : undefined), [user?.id])
+  return null
 }
 
 export function NotifyCard({ user, admin = false }) {

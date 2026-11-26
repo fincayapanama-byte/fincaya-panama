@@ -87,23 +87,23 @@ function FarmForm({ user, farm, onSaved }) {
   const submit = async (e) => {
     e.preventDefault(); setBusy(true); setErr('')
     try { onSaved(await api.saveFarm(user, { ...f, whatsapp: (f.whatsapp || '').replace(/\D/g, '').replace(/^(\d{8})$/, '507$1') })) }
-    catch (er) { setErr(er.message || 'No se pudo guardar la finca') }
+    catch (er) { setErr(er.message || 'No se pudo guardar tu perfil') }
     finally { setBusy(false) }
   }
   return (
     <form onSubmit={submit} className="form form--2">
       <div className="farm-images">
-        <label className="logo-up" title="Logo de la finca">
+        <label className="logo-up" title="Logo o foto de perfil">
           {f.logo_url ? <img src={f.logo_url} alt="Logo" /> : <span>{up === 'logo_url' ? 'Subiendo…' : '+ Logo'}</span>}
           <input type="file" accept="image/*" onChange={photo('logo_url')} hidden />
         </label>
         <label className="cover-up" title="Foto de portada" style={f.cover_url ? { backgroundImage: `url(${f.cover_url})` } : undefined}>
-          {!f.cover_url && <span>{up === 'cover_url' ? 'Subiendo…' : '+ Foto de portada (la finca, los animales o el cultivo)'}</span>}
+          {!f.cover_url && <span>{up === 'cover_url' ? 'Subiendo…' : '+ Foto de portada (tu finca, tus animales, cultivos o equipos)'}</span>}
           {f.cover_url && <span className="cover-up__change">Cambiar portada</span>}
           <input type="file" accept="image/*" onChange={photo('cover_url')} hidden />
         </label>
       </div>
-      <Field label="Nombre de la finca"><input required value={f.name} onChange={set('name')} /></Field>
+      <Field label="Nombre de la finca, productor o vendedor"><input required value={f.name} onChange={set('name')} /></Field>
       <Field label="Provincia"><select value={f.province} onChange={set('province')}>{PROVINCES.map((p) => <option key={p}>{p}</option>)}</select></Field>
       <Field label="Distrito"><input value={f.district || ''} onChange={set('district')} /></Field>
       <Field label="Referencia de ubicación (opcional)" hint="Ubicación aproximada. La dirección exacta nunca es obligatoria."><input value={f.address || ''} onChange={set('address')} placeholder="Vía a Las Minas, Santa Cruz" /></Field>
@@ -115,8 +115,8 @@ function FarmForm({ user, farm, onSaved }) {
       <Field label="Sitio web"><input value={f.website || ''} onChange={set('website')} placeholder="https://" /></Field>
       <Field label="Descripción" hint="Rubros, razas, años de experiencia, si haces entregas."><textarea rows="4" value={f.description || ''} onChange={set('description')} /></Field>
       <div className="form__full">
-        <p className="field__label">¿Qué produce o vende tu finca?</p>
-        <p className="muted small">Define el ícono con el que sale tu finca en el mapa.</p>
+        <p className="field__label">¿Qué produces o vendes?</p>
+        <p className="muted small">Define el ícono con el que apareces en el mapa.</p>
         <div className="chips chips--wrap">
           {ACTIVITIES.map((a) => (
             <button type="button" key={a.slug} className={`chip ${(f.activities || []).includes(a.slug) ? 'is-on' : ''}`} onClick={() => toggleAct(a.slug)}>{a.icon} {a.name}</button>
@@ -135,7 +135,7 @@ function FarmForm({ user, farm, onSaved }) {
         <label className="check"><input type="checkbox" checked={f.show_on_map !== false} onChange={(e) => setF((x) => ({ ...x, show_on_map: e.target.checked }))} /> Mostrar mi finca en el mapa público</label>
       </div>
       {err && <p className="notice form__actions">{err}</p>}
-      <div className="form__actions"><button className="btn btn--fill" disabled={busy || !!up}>{busy ? 'Guardando…' : 'Guardar finca'}</button></div>
+      <div className="form__actions"><button className="btn btn--fill" disabled={busy || !!up}>{busy ? 'Guardando…' : 'Guardar perfil'}</button></div>
       {crop && <ImageCropper file={crop.file} aspect={crop.key === 'logo_url' ? 1 : 16 / 9} outW={crop.key === 'logo_url' ? 600 : 1600} round={crop.key === 'logo_url'}
         title={crop.key === 'logo_url' ? 'Ajusta el logo' : 'Ajusta la foto de portada'} onDone={upload} onCancel={() => setCrop(null)} />}
     </form>
@@ -156,16 +156,16 @@ export function Publish() {
     <div className="wrap section narrow">
       <Seo title="Publicar gratis" />
       <h1 className="h1">Publica gratis tu finca y tus productos</h1>
-      <p className="lead">Crea tu cuenta, registra tu finca y publica. Tus anuncios aparecen en Google y en nuestras redes.</p>
+      <p className="lead">Crea tu cuenta, regístrate como finca, productor o vendedor y publica. Tus anuncios aparecen en Google y en nuestras redes.</p>
       <Link to="/entrar" className="btn btn--accent">Crear cuenta o entrar</Link>
     </div>
   )
   if (farmQ.loading) return <div className="wrap section"><Loading /></div>
   if (!farmQ.data) return (
     <div className="wrap section narrow">
-      <Seo title="Registra tu finca" />
-      <h1 className="h1">Paso 1: registra tu finca</h1>
-      <p className="lead">Solo una vez. Luego publicas todos los productos que quieras.</p>
+      <Seo title="Registrarse" />
+      <h1 className="h1">Paso 1: Registrarse</h1>
+      <p className="lead">Solo una vez. Sirve para fincas, productores y vendedores: venta de animales y cosechas, fincas y propiedades o alquiler de equipos. Luego publicas todo lo que quieras.</p>
       <div className="card form-card"><FarmForm user={user} onSaved={() => { farmQ.reload(); window.scrollTo(0, 0) }} /></div>
     </div>
   )
@@ -189,7 +189,7 @@ export function Publish() {
     <div className="wrap section narrow">
       <Seo title="Publicar producto" />
       <h1 className="h1">Publicar producto</h1>
-      <p className="muted">Finca: <strong>{farm.name}</strong> · {farm.province}. Revisamos cada anuncio antes de publicarlo (normalmente el mismo día).</p>
+      <p className="muted">Perfil: <strong>{farm.name}</strong> · {farm.province}. Revisamos cada anuncio antes de publicarlo (normalmente el mismo día).</p>
       <form onSubmit={submit} className="card form-card form form--2">
         <Field label="Categoría">
           <select value={f.category_slug} onChange={set('category_slug')}>
@@ -231,7 +231,7 @@ export function Dashboard() {
       </div>
       <SectionNav label="Mi panel" items={[
         { to: '/panel', label: 'Mis anuncios', end: true }, { to: '/panel/avisos', label: 'Avisos' },
-        { to: '/panel/comentarios', label: 'Comentarios' }, { to: '/panel/finca', label: 'Mi finca' },
+        { to: '/panel/comentarios', label: 'Comentarios' }, { to: '/panel/finca', label: 'Mi perfil' },
         { to: '/panel/favoritos', label: 'Favoritos' }, { to: '/panel/precio', label: 'Reportar precio' }]} />
       <Routes>
         <Route index element={<MyListings user={user} />} />
@@ -256,7 +256,7 @@ function MyListings({ user }) {
   const total = (k) => data.reduce((s, l) => s + (l[k] || 0), 0)
   return (
     <>
-      {farmSaved && <p className="notice notice--ok">✅ Finca guardada. Ya puedes <Link to="/publicar">publicar tu primer anuncio</Link>.</p>}
+      {farmSaved && <p className="notice notice--ok">✅ Perfil guardado. Ya puedes <Link to="/publicar">publicar tu primer anuncio</Link>.</p>}
       {published && <p className="notice notice--ok">¡Listo! Tu anuncio está en revisión. Te avisaremos cuando se publique.</p>}
       <div className="kpis">
         <div className="kpi"><span>Anuncios activos</span><strong>{data.filter((l) => l.status === 'aprobado').length}</strong></div>

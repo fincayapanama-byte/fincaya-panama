@@ -1,6 +1,7 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Header, Footer } from './components/ui'
+import { AutoPush } from './components/Notify'
 import { Home, Search, ListingPage, FarmPage, Farms, FarmsMapPage, Prices, ProductPrice, Safety, About, Faq, Privacy, NotFound } from './pages/public'
 import { Login, Publish, Dashboard } from './pages/account'
 import Admin from './pages/admin/Admin'
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <>
       <Header />
+      <AutoPush />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />

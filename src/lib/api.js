@@ -432,6 +432,21 @@ export const api = {
       }
       ok(await supabase.from('ad_slots').upsert(a))
     },
+    async notifySettings() {
+      if (DEMO) return [
+        { key: 'listing_pending', label: 'Anuncios por aprobar', description: 'Cuando un usuario publica un anuncio nuevo.', enabled: true },
+        { key: 'daily_prices', label: 'Recordatorio de precios del día', description: 'Cada mañana, para publicar el post de precios en redes.', enabled: true },
+        { key: 'new_farm', label: 'Nuevos registros', description: 'Cuando se registra una finca, productor o vendedor.', enabled: true },
+        { key: 'listing_report', label: 'Reportes de anuncios', description: 'Cuando alguien reporta un anuncio por estafa o precio falso.', enabled: true },
+        { key: 'price_report', label: 'Precios reportados', description: 'Cuando un productor reporta un precio por aprobar.', enabled: true },
+        { key: 'listing_expiring', label: 'Anuncios por vencer', description: 'Resumen diario de anuncios que vencen en los próximos 3 días.', enabled: true },
+      ]
+      try { return ok(await supabase.from('admin_notify_settings').select('*').order('sort')) || [] } catch { return [] }
+    },
+    async setNotifySetting(key, enabled) {
+      if (DEMO) return
+      ok(await supabase.from('admin_notify_settings').update({ enabled, updated_at: new Date().toISOString() }).eq('key', key))
+    },
     async reports() {
       if (DEMO) { const db = load(); return db.reports.map((r) => ({ ...r, listing: db.listings.find((l) => l.id === r.listing_id) })) }
       return ok(await supabase.from('reports').select('*, listing:listings(title, slug)').order('created_at', { ascending: false }))

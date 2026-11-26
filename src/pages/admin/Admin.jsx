@@ -37,6 +37,28 @@ export default function Admin() {
   )
 }
 
+function AdminAlerts() {
+  const { data, reload } = useAsync(() => api.admin.notifySettings(), [])
+  const [busy, setBusy] = useState('')
+  if (!data?.length) return null
+  const toggle = async (s) => {
+    setBusy(s.key)
+    try { await api.admin.setNotifySetting(s.key, !s.enabled); await reload() } finally { setBusy('') }
+  }
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <h2 className="h2">Qué avisos quiero recibir</h2>
+      <p className="muted small">Activa o desactiva cada aviso. Aplica a todos los administradores.</p>
+      {data.map((s) => (
+        <label key={s.key} className="check" style={{ display: 'flex', gap: 8, alignItems: 'flex-start', margin: '10px 0' }}>
+          <input type="checkbox" checked={s.enabled} disabled={busy === s.key} onChange={() => toggle(s)} />
+          <span><strong>{s.label}</strong>{s.description && <><br /><span className="muted small">{s.description}</span></>}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 function Overview() {
   const { user } = useAuth()
   const { data: s } = useAsync(() => api.admin.stats(), [])
@@ -47,6 +69,7 @@ function Overview() {
   return (
     <>
       <NotifyCard user={user} admin />
+      <AdminAlerts />
       <div className="kpis kpis--4">
         <K label="Usuarios" value={s.users} to="/admin/usuarios" />
         <K label="Fincas (verificadas)" value={`${s.farms} (${s.verified})`} to="/admin/fincas" />

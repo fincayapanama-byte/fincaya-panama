@@ -12,6 +12,11 @@ export function registerSW() {
 
 const b64ToU8 = (b) => { const p = '='.repeat((4 - (b.length % 4)) % 4); const r = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, (c) => c.charCodeAt(0)) }
 
+// Preferencias de este celular: si la persona desactiva los avisos, no se los volvemos a activar sola
+const LS = { get: (k) => { try { return localStorage.getItem(k) } catch { return null } }, set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v) } catch { /* sin almacenamiento */ } } }
+export const pushOptedOut = () => LS.get('fy_push_off') === '1'
+const ASK_EVERY = 7 * 864e5 // si cierra la ventana de permiso sin decidir, no insistimos antes de 7 días
+
 // Estado: 'unsupported' | 'ios-install' | 'denied' | 'on' | 'off'
 export async function pushState() {
   if (isIOS() && !isStandalone()) return 'ios-install'
@@ -55,6 +60,7 @@ export async function enablePush(user, onStep = () => {}) {
   }
   onStep('Guardando…')
   await withTimeout(api.savePushSubscription(user, sub), 15000, 'No se pudo guardar el registro. Intenta de nuevo.')
+  LS.set('fy_push_off', null); LS.set('fy_push_user', user.id)
   return sub
 }
 
@@ -62,6 +68,29 @@ export async function disablePush() {
   const reg = await navigator.serviceWorker.getRegistration()
   const sub = await reg?.pushManager.getSubscription()
   if (sub) { await api.removePushSubscription(sub.endpoint); await sub.unsubscribe() }
+  LS.set('fy_push_off', '1')
+}
+
+// Avisos activados por defecto: al iniciar sesión se pide el permiso solo, como en cualquier app.
+// - Permiso ya concedido: se registra este celular a la cuenta en silencio.
+// - Permiso sin decidir: se pregunta en el primer toque (los navegadores lo exigen) y no más de una vez cada 7 días.
+// - Bloqueado, desactivado por la persona, iPhone sin instalar o navegador sin soporte: no se hace nada.
+// Devuelve una función para cancelar.
+export function autoEnablePush(user) {
+  if (DEMO || !user || !pushSupported() || pushOptedOut() || (isIOS() && !isStandalone())) return () => {}
+  if (Notification.permission === 'denied') return () => {}
+  if (Notification.permission === 'granted') {
+    // ya registrado para esta cuenta en este celular: no repetimos el trabajo en cada carga
+    navigator.serviceWorker.getRegistration().then((r) => r?.pushManager.getSubscription()).then((sub) => {
+      if (!(sub && LS.get('fy_push_user') === user.id)) return enablePush(user)
+    }).catch(() => {})
+    return () => {}
+  }
+  const last = Number(LS.get('fy_push_asked') || 0)
+  if (Date.now() - last < ASK_EVERY) return () => {}
+  const ask = () => { LS.set('fy_push_asked', String(Date.now())); enablePush(user).catch(() => {}) }
+  window.addEventListener('click', ask, { once: true })
+  return () => window.removeEventListener('click', ask)
 }
 
 // "Instalar app" (Android/Chrome): guardamos el evento para mostrar nuestro botón
