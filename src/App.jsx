@@ -2,7 +2,7 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Header, Footer } from './components/ui'
 import { AutoPush } from './components/Notify'
-import { Home, Search, ListingPage, FarmPage, Farms, FarmsMapPage, Prices, ProductPrice, Safety, About, Faq, Privacy, NotFound } from './pages/public'
+import { Home, Search, ListingPage, FarmPage, Farms, FarmsMapPage, Prices, ProductPrice, Safety, About, Faq, Privacy, DeleteAccount, NotFound } from './pages/public'
 import { Login, Publish, Dashboard } from './pages/account'
 import Admin from './pages/admin/Admin'
 
@@ -29,6 +29,7 @@ export default function App() {
           <Route path="/acerca" element={<About />} />
           <Route path="/preguntas-frecuentes" element={<Faq />} />
           <Route path="/privacidad" element={<Privacy />} />
+          <Route path="/eliminar-cuenta" element={<DeleteAccount />} />
           <Route path="/entrar" element={<Login />} />
           <Route path="/publicar" element={<Publish />} />
           <Route path="/panel/*" element={<Dashboard />} />
