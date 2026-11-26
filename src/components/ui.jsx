@@ -111,6 +111,7 @@ export function Footer() {
           <Link to="/acerca">Acerca de nosotros</Link>
           <Link to="/preguntas-frecuentes">Preguntas frecuentes</Link>
           <Link to="/privacidad">Términos y privacidad</Link>
+          <Link to="/eliminar-cuenta">Eliminar mi cuenta</Link>
           <a href={waLink(BRAND.whatsapp, `Hola ${BRAND.name}`)} target="_blank" rel="noopener" className="ftr__wa"><IcoWhatsApp size={18} /> Soporte por WhatsApp</a>
         </div>
       </div>
