@@ -175,11 +175,11 @@ ${rows.slice(0, 120).map((r) => `<tr><td>${esc(r.date)}</td><td>${esc(r.market |
       ])
       // Igual que la app: una categoría principal incluye los anuncios de sus subcategorías
       const slugs = [cat.slug, ...kids.map((k) => k.slug)]
-      const ls = await q(`listings?status=eq.aprobado&category_slug=in.(${slugs.join(',')})${provName ? `&province=eq.${encodeURIComponent(provName)}` : ''}&select=title,slug,price,unit,province,district,category_slug,approved_at,created_at&order=created_at.desc&limit=200`)
+      const ls = await q(`listings?status=eq.aprobado&category_slug=in.(${slugs.join(',')})${provName ? `&province=eq.${encodeURIComponent(provName)}` : ''}&select=title,slug,price,unit,province,district,category_slug,approved_at,created_at,updated_at&order=created_at.desc&limit=200`)
       const where = provName ? `${provName}, Panamá` : 'Panamá'
       const url = `${SITE}/c/${cat.slug}${provName ? `/${prov}` : ''}`
       const count = ls.length >= 200 ? 'Más de 200' : String(ls.length)
-      const updated = maxDate(ls, (l) => l.approved_at || l.created_at)
+      const updated = maxDate(ls, (l) => l.updated_at || l.approved_at || l.created_at)
       const provs = provName ? [] : [...new Set(ls.map((l) => l.province))].filter((p) => PROV_BY_SLUG[slugify(p)])
       const subs = kids.filter((k) => ls.some((l) => l.category_slug === k.slug))
       html = page({

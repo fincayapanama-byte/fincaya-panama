@@ -25,9 +25,9 @@ export default async function handler(req, res) {
 
   const since = encodeURIComponent(new Date(Date.now() - 25 * 3600e3).toISOString())
   const [fresh, gone, newFarms, cats] = await Promise.all([
-    q(`listings?status=eq.aprobado&approved_at=gte.${since}&select=slug,category_slug,province&limit=2000`),
+    q(`listings?status=eq.aprobado&updated_at=gte.${since}&select=slug,category_slug,province&limit=2000`),
     q(`listings?status=eq.vencido&expires_at=gte.${since}&select=slug,category_slug,province&limit=2000`),
-    q(`farms?created_at=gte.${since}&select=slug&limit=2000`),
+    q(`farms?updated_at=gte.${since}&select=slug&limit=2000`),
     q('categories?select=slug,parent_slug'),
   ])
   const parentOf = Object.fromEntries(cats.map((c) => [c.slug, c.parent_slug]))
