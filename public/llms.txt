@@ -1,12 +1,13 @@
 # FincaYa Panamá
 
-> Directorio agropecuario de Panamá. Productores de todo el país publican gratis ganado, cerdos (lechones, cerdo en pie), aves, productos agrícolas (ñame, yuca, plátano, otoe, hortalizas), maquinaria, insumos, servicios y fincas. Los compradores contactan directo al productor por WhatsApp, sin intermediarios. También publica a diario los precios mayoristas oficiales del IMA (Merca Panamá, Mercado de San Felipe y mercados regionales).
+> FincaYa Panamá (también escrito FincaYaPanamá, FincaYa Panama o FincaYa) es un directorio agropecuario de Panamá. Productores de todo el país publican gratis ganado, cerdos (lechones, cerdo en pie), aves, productos agrícolas (ñame, yuca, plátano, otoe, hortalizas), maquinaria, insumos, servicios y fincas. Los compradores contactan directo al productor por WhatsApp, sin intermediarios. También publica a diario los precios mayoristas oficiales del IMA (Merca Panamá, Mercado de San Felipe y mercados regionales).
 
 ## Páginas principales
 - [Inicio](https://fincayapanama.com/): buscador por categoría y provincia, anuncios recientes y precios del día.
 - [Precios del día](https://fincayapanama.com/precios): precios mayoristas diarios por producto y mercado (fuente: IMA, sipan.ima.gob.pa), con variación diaria.
 - Precio de un producto: https://fincayapanama.com/precios/{producto} (ej. [ñame diamante](https://fincayapanama.com/precios/name-diamante), [yuca](https://fincayapanama.com/precios/yuca), [plátano de Chiriquí](https://fincayapanama.com/precios/platano-de-chiriqui)) con historial de 60 días.
 - [Directorio de fincas](https://fincayapanama.com/fincas): fincas y productores con ubicación y contacto.
+- [Mapa de fincas](https://fincayapanama.com/mapa): las fincas con ubicación, listadas por provincia.
 - Categorías: [Ganadería](https://fincayapanama.com/c/ganaderia), [Porcicultura](https://fincayapanama.com/c/porcicultura), [Avicultura](https://fincayapanama.com/c/avicultura), [Agricultura](https://fincayapanama.com/c/agricultura), [Maquinaria](https://fincayapanama.com/c/maquinaria), [Insumos](https://fincayapanama.com/c/insumos), [Servicios](https://fincayapanama.com/c/servicios). Por provincia: https://fincayapanama.com/c/{categoria}/{provincia} (ej. /c/porcicultura/cocle).
 - [Compra segura](https://fincayapanama.com/seguridad): consejos para comprar animales y productos del campo sin estafas.
 

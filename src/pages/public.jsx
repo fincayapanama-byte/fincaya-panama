@@ -101,13 +101,11 @@ export function Home() {
   const rail = useRail([roots.length])
   return (
     <>
-      <Seo description="Compra, vende y conecta con el agro panameño: animales, productos agrícolas, insumos, maquinaria, servicios y fincas por provincia."
-        jsonld={{ '@context': 'https://schema.org', '@type': 'WebSite', name: BRAND.name, url: BRAND.url,
-          potentialAction: { '@type': 'SearchAction', target: `${BRAND.url}/buscar?q={q}`, 'query-input': 'required name=q' } }} />
+      <Seo description="Encuentra ganado, lechones, productos agrícolas, maquinaria y productores en Panamá. Explora fincas por provincia y publica tus anuncios agropecuarios." />
       <section className="hero">
         <div className="wrap">
           <p className="eyebrow">{BRAND.tagline}</p>
-          <h1 className="hero__title" data-reveal="blur-in">Compra, vende y conecta con el agro panameño</h1>
+          <h1 className="hero__title" data-reveal="blur-in">Compra y vende productos agropecuarios en Panamá</h1>
           <p className="hero__lead" data-reveal="fade-up" style={{ '--d': '120ms' }}>Animales, productos agrícolas, insumos, maquinaria, servicios y fincas de todo Panamá. Contacta directo al productor.</p>
           <HeroSearch cats={roots} />
         </div>
@@ -254,7 +252,7 @@ export function Search() {
 
   return (
     <div className="wrap section">
-      <Seo title={title} description={`${title}: anuncios de productores en Panamá con precio, ubicación y contacto por WhatsApp.`} />
+      <Seo title={title} description={`${title}: anuncios de productores en Panamá con precio, ubicación y contacto por WhatsApp.`} noindex={!cat || !!q || !!sp.get('prov') || !!(cat && cats.data && !catObj)} />
       <nav className="crumbs"><Link to="/">Inicio</Link> / <Link to="/buscar">Directorio</Link>{catObj && <> / {catObj.name}</>}</nav>
       <h1 className="h1">{title}</h1>
       {/* Filtros compactos para celular: desplegables */}
@@ -369,7 +367,7 @@ export function ListingPage() {
           <a className="btn btn--wa btn--block" href={waLink(f.whatsapp, text)} target="_blank" rel="noopener" onClick={contact}><IcoWhatsApp size={22} /> Contactar por WhatsApp</a>
           {f.phone && <a className="btn btn--ghost btn--block" href={`tel:${f.phone}`} onClick={contact}><IcoPhone /> Llamar</a>}
           <Link to={`/finca/${f.slug}`} className="farmmini">
-            {f.logo_url ? <img className="farmmini__avatar" src={f.logo_url} alt="" /> : <span className="farmmini__avatar">{(f.name || '?').slice(0, 1)}</span>}
+            {f.logo_url ? <img className="farmmini__avatar" src={f.logo_url} alt={`Logo de ${f.name}`} /> : <span className="farmmini__avatar">{(f.name || '?').slice(0, 1)}</span>}
             <span><strong>{f.name}</strong> {f.verified && <Verified />}<br /><span className="muted">{[f.district, f.province].map((x) => (x || '').trim()).filter(Boolean).join(', ')}</span></span>
             <IcoChevron className="ico farmmini__go" />
           </Link>
@@ -701,7 +699,7 @@ export function Privacy() {
 export function NotFound() {
   return (
     <div className="wrap section narrow">
-      <Seo title="Página no encontrada" />
+      <Seo title="Página no encontrada" noindex />
       <h1 className="h1">No encontramos esa página</h1>
       <p>Puede que el anuncio haya vencido o se haya vendido. <Link to="/buscar">Ver anuncios activos</Link>.</p>
     </div>

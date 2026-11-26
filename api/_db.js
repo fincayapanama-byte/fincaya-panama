@@ -11,3 +11,8 @@ export async function q(path) {
   return r.json()
 }
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+
+export const slugify = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+// Mismas regiones que PROVINCES en src/lib/config.js (validan las URLs /c/:cat/:prov)
+export const PROVINCES = ['Bocas del Toro', 'Coclé', 'Colón', 'Chiriquí', 'Darién', 'Herrera', 'Los Santos', 'Panamá', 'Panamá Oeste', 'Veraguas', 'Comarca Ngäbe-Buglé', 'Comarca Guna Yala', 'Comarca Emberá-Wounaan']
+export const PROV_BY_SLUG = Object.fromEntries(PROVINCES.map((p) => [slugify(p), p]))

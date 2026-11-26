@@ -1,15 +1,24 @@
+# Las rutas privadas se protegen con inicio de sesión; estas reglas solo evitan que se rastreen.
+# Cada grupo repite los Disallow porque un rastreador con grupo propio ignora el grupo "*".
+
 User-agent: *
 Allow: /
 Disallow: /panel
 Disallow: /admin
+Disallow: /api/
 
 User-agent: GPTBot
-Allow: /
 User-agent: OAI-SearchBot
-Allow: /
+User-agent: ChatGPT-User
 User-agent: PerplexityBot
-Allow: /
+User-agent: Perplexity-User
 User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: Google-Extended
 Allow: /
+Disallow: /panel
+Disallow: /admin
+Disallow: /api/
 
 Sitemap: https://fincayapanama.com/sitemap.xml

@@ -1,16 +1,42 @@
 import { Bell } from './Notify'
 import { IcoFacebook, IcoInstagram, IcoTikTok, IcoWhatsApp } from './icons'
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BRAND, money, waLink, timeAgo } from '../lib/config'
 import { api, DEMO } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
 // ---------- SEO en el navegador (los bots reciben HTML desde /api/seo) ----------
-export function Seo({ title, description, jsonld }) {
+const DEFAULT_TITLE = `${BRAND.name} | Anuncios Agropecuarios y Fincas en Panamá`
+const DEFAULT_DESC = 'Encuentra ganado, lechones, productos agrícolas, maquinaria y productores en Panamá. Explora fincas por provincia y publica tus anuncios agropecuarios.'
+const setMeta = (attr, key, content) => {
+  let m = document.head.querySelector(`meta[${attr}="${key}"]`)
+  if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); document.head.appendChild(m) }
+  m.setAttribute('content', content)
+}
+export function Seo({ title, description, jsonld, noindex }) {
+  const { pathname } = useLocation()
   useEffect(() => {
-    document.title = title ? `${title} | ${BRAND.name}` : `${BRAND.name} | Todo el agro, en un solo lugar`
-    if (description) document.querySelector('meta[name="description"]')?.setAttribute('content', description)
+    const full = title ? `${title} | ${BRAND.name}` : DEFAULT_TITLE
+    const desc = description || DEFAULT_DESC
+    const url = `${BRAND.url}${pathname.length > 1 ? pathname.replace(/\/+$/, '') : '/'}`
+    document.title = full
+    setMeta('name', 'description', desc)
+    setMeta('property', 'og:title', full)
+    setMeta('property', 'og:description', desc)
+    setMeta('property', 'og:url', url)
+    let c = document.getElementById('seo-canonical')
+    if (!c) { c = document.createElement('link'); c.rel = 'canonical'; c.id = 'seo-canonical'; document.head.appendChild(c) }
+    c.href = url
+    if (noindex) {
+      let r = document.getElementById('seo-robots')
+      if (!r) { r = document.createElement('meta'); r.name = 'robots'; r.id = 'seo-robots'; document.head.appendChild(r) }
+      r.content = 'noindex, follow'
+    }
+    // Al salir de la página se quitan para que otra ruta sin <Seo> no herede el canonical ni el noindex
+    return () => { document.getElementById('seo-canonical')?.remove(); document.getElementById('seo-robots')?.remove() }
+  }, [title, description, pathname, noindex])
+  useEffect(() => {
     let s = document.getElementById('jsonld')
     if (jsonld) {
       if (!s) { s = document.createElement('script'); s.type = 'application/ld+json'; s.id = 'jsonld'; document.head.appendChild(s) }

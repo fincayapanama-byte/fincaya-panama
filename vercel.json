@@ -14,7 +14,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+          "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]lurp|BingPreview|MicrosoftPreview|Google-InspectionTool|GoogleOther|Facebot|facebookexternalhit|WhatsApp|ChatGPT-User|Perplexity-User|Claude-User|Claude-SearchBot).*"
         }
       ],
       "destination": "/api/seo?path=/$1/:slug"
@@ -25,7 +25,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+          "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]lurp|BingPreview|MicrosoftPreview|Google-InspectionTool|GoogleOther|Facebot|facebookexternalhit|WhatsApp|ChatGPT-User|Perplexity-User|Claude-User|Claude-SearchBot).*"
         }
       ],
       "destination": "/api/seo?path=/precios/:slug"
@@ -36,7 +36,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+          "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]lurp|BingPreview|MicrosoftPreview|Google-InspectionTool|GoogleOther|Facebot|facebookexternalhit|WhatsApp|ChatGPT-User|Perplexity-User|Claude-User|Claude-SearchBot).*"
         }
       ],
       "destination": "/api/seo?path=/c/:cat/:prov"
@@ -47,18 +47,18 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+          "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]lurp|BingPreview|MicrosoftPreview|Google-InspectionTool|GoogleOther|Facebot|facebookexternalhit|WhatsApp|ChatGPT-User|Perplexity-User|Claude-User|Claude-SearchBot).*"
         }
       ],
       "destination": "/api/seo?path=/c/:cat"
     },
     {
-      "source": "/(precios|fincas)",
+      "source": "/(precios|fincas|mapa|seguridad)",
       "has": [
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+          "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]lurp|BingPreview|MicrosoftPreview|Google-InspectionTool|GoogleOther|Facebot|facebookexternalhit|WhatsApp|ChatGPT-User|Perplexity-User|Claude-User|Claude-SearchBot).*"
         }
       ],
       "destination": "/api/seo?path=/$1"
@@ -69,7 +69,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|crawl|spider|slurp|Bingbot|Googlebot|GPTBot|OAI-SearchBot|ChatGPT|PerplexityBot|ClaudeBot|Applebot|facebookexternalhit|WhatsApp|TelegramBot|Twitterbot|LinkedInBot).*"
+          "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]lurp|BingPreview|MicrosoftPreview|Google-InspectionTool|GoogleOther|Facebot|facebookexternalhit|WhatsApp|ChatGPT-User|Perplexity-User|Claude-User|Claude-SearchBot).*"
         }
       ],
       "destination": "/api/seo?path=/"
