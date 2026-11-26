@@ -53,7 +53,7 @@
       "destination": "/api/seo?path=/c/:cat"
     },
     {
-      "source": "/(precios|fincas|mapa|seguridad)",
+      "source": "/(precios|fincas|mapa|seguridad|acerca|preguntas-frecuentes)",
       "has": [
         {
           "type": "header",

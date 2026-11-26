@@ -38,6 +38,8 @@ export default async function handler(req, res) {
     { loc: `${SITE}/fincas`, lastmod: farmsMod },
     { loc: `${SITE}/mapa`, lastmod: farmsMod },
     { loc: `${SITE}/seguridad` },
+    { loc: `${SITE}/acerca` },
+    { loc: `${SITE}/preguntas-frecuentes` },
     ...Object.entries(catMod).map(([c, d]) => ({ loc: `${SITE}/c/${c}`, lastmod: d })),
     ...Object.entries(comboMod).map(([k, d]) => ({ loc: `${SITE}/c/${k}`, lastmod: d })),
     ...Object.entries(lastBySlug).map(([slug, date]) => ({ loc: `${SITE}/precios/${slug}`, lastmod: day(date) })),

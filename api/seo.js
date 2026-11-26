@@ -14,7 +14,7 @@ const priceList = (list) => `<table><tr><th>Producto</th><th>Precio</th><th>Unid
 // Variantes con las que la gente escribe la marca
 const ALT_NAMES = ['FincaYaPanamá', 'FincaYa Panama', 'Finca Ya Panamá', 'fincayapanama', 'FincaYa', 'Fincaya', 'FincaYaPa', 'Fincayapa']
 const DEFAULT_IMAGE = `${SITE}/logo-completo.png`
-const NAV = `<nav aria-label="Principal"><a href="${SITE}/">Inicio</a> · <a href="${SITE}/precios">Precios del día</a> · <a href="${SITE}/fincas">Fincas</a> · <a href="${SITE}/mapa">Mapa de fincas</a> · <a href="${SITE}/seguridad">Compra segura</a> · <a href="${SITE}/publicar">Publicar un anuncio</a></nav>`
+const NAV = `<nav aria-label="Principal"><a href="${SITE}/">Inicio</a> · <a href="${SITE}/precios">Precios del día</a> · <a href="${SITE}/fincas">Fincas</a> · <a href="${SITE}/mapa">Mapa de fincas</a> · <a href="${SITE}/seguridad">Compra segura</a> · <a href="${SITE}/acerca">Acerca de</a> · <a href="${SITE}/preguntas-frecuentes">Preguntas frecuentes</a> · <a href="${SITE}/publicar">Publicar un anuncio</a></nav>`
 const maxDate = (rows, f) => rows.map(f).filter(Boolean).map((d) => String(d).slice(0, 10)).sort().at(-1) || ''
 
 function page({ title, fullTitle, description, image, url, jsonld, body, noindex, crumbs }) {
@@ -251,6 +251,41 @@ ${Object.entries(byProv).map(([p, list]) => `<h2>${esc(p)}</h2><ul>${list.map((f
 <li>Desconfía de precios muy por debajo del <a href="${SITE}/precios">precio del día</a>.</li>
 <li>Si algo no cuadra, usa el botón «Reportar anuncio».</li>
 </ol>`,
+    })
+  }
+
+  // ---------- Acerca de ----------
+  if (path === '/acerca') {
+    html = page({
+      title: 'Acerca de FincaYaPanamá', description: 'FincaYaPanamá, también conocida como FincaYa Panamá, es la plataforma digital que conecta a productores, compradores y vendedores del sector agropecuario de Panamá.',
+      image: DEFAULT_IMAGE, url: `${SITE}/acerca`,
+      crumbs: [['Inicio', `${SITE}/`], ['Acerca de', `${SITE}/acerca`]],
+      jsonld: { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'Acerca de FincaYaPanamá', url: `${SITE}/acerca`, inLanguage: 'es-PA', about: { '@id': `${SITE}/#organization` }, isPartOf: { '@type': 'WebSite', name: BRAND, url: `${SITE}/` } },
+      body: `<h1>Acerca de FincaYaPanamá</h1>
+<p><strong>Conectamos el campo panameño con nuevas oportunidades.</strong></p>
+<p>FincaYaPanamá, también conocida como FincaYa Panamá, nace como una iniciativa para transformar la manera en que los productores agropecuarios de Panamá promocionan sus fincas, comercializan sus productos y conectan con potenciales compradores.</p>
+<p>Somos una plataforma digital especializada en el sector agropecuario panameño, donde puedes comprar, vender, publicar anuncios, registrar tu finca, encontrar productores y consultar <a href="${SITE}/precios">precios de referencia</a> del mercado.</p>
+<h2>Nuestra misión</h2>
+<p>Acercar la tecnología al campo, facilitar el comercio directo y fortalecer la economía de nuestros productores.</p>
+<h2>Nuestra visión</h2>
+<p>Convertirnos en el directorio y marketplace agropecuario más grande y confiable de Panamá.</p>
+<p><strong>FincaYaPanamá: el campo panameño conectado.</strong></p>
+<p>Sitio web oficial: <a href="${SITE}">https://fincayapanama.com</a></p>
+<p><a href="${SITE}/preguntas-frecuentes">Preguntas frecuentes</a> · <a href="${SITE}/seguridad">Compra segura</a> · <a href="${SITE}/publicar">Publicar un anuncio</a></p>`,
+    })
+  }
+
+  // ---------- Preguntas frecuentes ----------
+  if (path === '/preguntas-frecuentes') {
+    const FAQ = [["¿Qué es FincaYaPanamá?", "FincaYaPanamá, también escrita FincaYa Panamá, es una plataforma digital de anuncios y directorio agropecuario que conecta a productores y compradores de todo Panamá."], ["¿Dónde publicar anuncios agropecuarios en Panamá?", "En FincaYaPanamá.com puedes publicar gratuitamente anuncios de ganado, lechones, aves, cosechas, productos agrícolas y otros productos del sector agropecuario."], ["¿Dónde comprar animales y productos agropecuarios en Panamá?", "FincaYaPanamá permite buscar anuncios y contactar directamente con productores agropecuarios por categoría, provincia y distrito, según la disponibilidad publicada."], ["¿Puedo registrar mi finca aunque no tenga productos para vender?", "Sí. Puedes registrar tu finca en el directorio agropecuario de FincaYaPanamá para darle visibilidad y facilitar que potenciales compradores conozcan tu actividad productiva."], ["¿FincaYaPanamá y FincaYa Panamá son la misma plataforma?", "Sí. Ambos nombres hacen referencia a la misma plataforma agropecuaria panameña, cuyo sitio web oficial es https://fincayapanama.com."]]
+    html = page({
+      title: 'Preguntas frecuentes', description: 'Respuestas sobre FincaYaPanamá: dónde publicar anuncios agropecuarios, comprar animales y productos del campo y registrar tu finca en Panamá.',
+      image: DEFAULT_IMAGE, url: `${SITE}/preguntas-frecuentes`,
+      crumbs: [['Inicio', `${SITE}/`], ['Preguntas frecuentes', `${SITE}/preguntas-frecuentes`]],
+      jsonld: { '@context': 'https://schema.org', '@type': 'FAQPage', url: `${SITE}/preguntas-frecuentes`, inLanguage: 'es-PA', mainEntity: FAQ.map(([name, text]) => ({ '@type': 'Question', name, acceptedAnswer: { '@type': 'Answer', text } })) },
+      body: `<h1>Preguntas frecuentes</h1>
+${FAQ.map(([qn, a]) => `<h2>${esc(qn)}</h2><p>${esc(a)}</p>`).join('\n')}
+<p><a href="${SITE}/acerca">Conoce más sobre nosotros</a></p>`,
     })
   }
 

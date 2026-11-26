@@ -108,6 +108,8 @@ export function Footer() {
           <p className="ftr__h">Plataforma</p>
           <Link to="/precios">Precios del día</Link><Link to="/fincas">Directorio de fincas</Link><Link to="/mapa">Mapa de fincas</Link>
           <Link to="/seguridad">Ayuda y compra segura</Link>
+          <Link to="/acerca">Acerca de nosotros</Link>
+          <Link to="/preguntas-frecuentes">Preguntas frecuentes</Link>
           <Link to="/privacidad">Términos y privacidad</Link>
           <a href={waLink(BRAND.whatsapp, `Hola ${BRAND.name}`)} target="_blank" rel="noopener" className="ftr__wa"><IcoWhatsApp size={18} /> Soporte por WhatsApp</a>
         </div>

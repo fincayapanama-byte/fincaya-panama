@@ -628,6 +628,44 @@ export function ProductPrice() {
   )
 }
 
+const FAQ_ITEMS = [["¿Qué es FincaYaPanamá?", "FincaYaPanamá, también escrita FincaYa Panamá, es una plataforma digital de anuncios y directorio agropecuario que conecta a productores y compradores de todo Panamá."], ["¿Dónde publicar anuncios agropecuarios en Panamá?", "En FincaYaPanamá.com puedes publicar gratuitamente anuncios de ganado, lechones, aves, cosechas, productos agrícolas y otros productos del sector agropecuario."], ["¿Dónde comprar animales y productos agropecuarios en Panamá?", "FincaYaPanamá permite buscar anuncios y contactar directamente con productores agropecuarios por categoría, provincia y distrito, según la disponibilidad publicada."], ["¿Puedo registrar mi finca aunque no tenga productos para vender?", "Sí. Puedes registrar tu finca en el directorio agropecuario de FincaYaPanamá para darle visibilidad y facilitar que potenciales compradores conozcan tu actividad productiva."], ["¿FincaYaPanamá y FincaYa Panamá son la misma plataforma?", "Sí. Ambos nombres hacen referencia a la misma plataforma agropecuaria panameña, cuyo sitio web oficial es https://fincayapanama.com."]]
+
+export function About() {
+  return (
+    <div className="wrap section narrow">
+      <Seo title="Acerca de FincaYaPanamá" description="FincaYaPanamá, también conocida como FincaYa Panamá, es la plataforma digital que conecta a productores, compradores y vendedores del sector agropecuario de Panamá." />
+      <h1 className="h1">Acerca de FincaYaPanamá</h1>
+      <p className="prose"><strong>Conectamos el campo panameño con nuevas oportunidades.</strong></p>
+      <p className="prose">FincaYaPanamá, también conocida como FincaYa Panamá, nace como una iniciativa para transformar la manera en que los productores agropecuarios de Panamá promocionan sus fincas, comercializan sus productos y conectan con potenciales compradores.</p>
+      <p className="prose">Somos una plataforma digital especializada en el sector agropecuario panameño, donde puedes comprar, vender, publicar anuncios, registrar tu finca, encontrar productores y consultar <Link to="/precios">precios de referencia</Link> del mercado.</p>
+      <h2 className="h2">Nuestra misión</h2>
+      <p className="prose">Acercar la tecnología al campo, facilitar el comercio directo y fortalecer la economía de nuestros productores.</p>
+      <h2 className="h2">Nuestra visión</h2>
+      <p className="prose">Convertirnos en el directorio y marketplace agropecuario más grande y confiable de Panamá.</p>
+      <p className="prose"><strong>FincaYaPanamá: el campo panameño conectado.</strong></p>
+      <p className="prose">Sitio web oficial: <a href="https://fincayapanama.com">https://fincayapanama.com</a></p>
+      <p className="prose"><Link to="/preguntas-frecuentes">Preguntas frecuentes</Link> · <Link to="/seguridad">Compra segura</Link> · <Link to="/publicar">Publicar un anuncio</Link></p>
+    </div>
+  )
+}
+
+export function Faq() {
+  const jsonld = { '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: 'es-PA', mainEntity: FAQ_ITEMS.map(([name, text]) => ({ '@type': 'Question', name, acceptedAnswer: { '@type': 'Answer', text } })) }
+  return (
+    <div className="wrap section narrow">
+      <Seo title="Preguntas frecuentes" description="Respuestas sobre FincaYaPanamá: dónde publicar anuncios agropecuarios, comprar animales y productos del campo y registrar tu finca en Panamá." jsonld={jsonld} />
+      <h1 className="h1">Preguntas frecuentes</h1>
+      {FAQ_ITEMS.map(([q, a]) => (
+        <div key={q}>
+          <h2 className="h2">{q}</h2>
+          <p className="prose">{a}</p>
+        </div>
+      ))}
+      <p className="prose"><Link to="/acerca">Conoce más sobre nosotros</Link></p>
+    </div>
+  )
+}
+
 export function Safety() {
   return (
     <div className="wrap section narrow">
