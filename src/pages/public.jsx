@@ -719,16 +719,48 @@ export function DeleteAccount() {
 export function Privacy() {
   return (
     <div className="wrap section narrow">
-      <Seo title="Términos y privacidad" />
+      <Seo title="Términos y privacidad" description="Cómo FincaYa Panamá trata tus datos y las reglas para publicar anuncios agropecuarios en la plataforma." />
       <h1 className="h1">Términos y privacidad</h1>
-      <p className="prose">Borrador para revisión legal antes del lanzamiento.</p>
+      <p className="muted">Última actualización: 26 de noviembre de 2026.</p>
+      <p className="prose">{BRAND.name} (fincayapanama.com) es un directorio de anuncios agropecuarios de Panamá. Esta página explica qué datos tratamos, para qué y cómo puedes pedir que los eliminemos.</p>
+
+      <h2 className="h2">Qué datos recopilamos</h2>
+      <ul className="prose list">
+        <li>De tu cuenta: correo, nombre y teléfono.</li>
+        <li>De tu perfil de finca, productor o vendedor: nombre, provincia, distrito, referencia de ubicación (opcional), WhatsApp, redes, logo y foto de portada. Las coordenadas del mapa solo se usan si tú las indicas y decides mostrarlas.</li>
+        <li>De tus anuncios: título, descripción, precio, fotos y ubicación aproximada.</li>
+        <li>De tu uso: favoritos, reportes que envíes y avisos recibidos. Si activas las notificaciones, guardamos un identificador técnico de tu celular para enviártelas.</li>
+        <li>Registros técnicos anónimos de uso y seguridad, que conservamos hasta 90 días.</li>
+      </ul>
+
+      <h2 className="h2">Para qué los usamos</h2>
+      <ul className="prose list">
+        <li>Mostrar tus anuncios y tu perfil a los compradores, y que te contacten por WhatsApp.</li>
+        <li>Revisar los anuncios antes de publicarlos y avisarte cuando se aprueben o necesiten cambios.</li>
+        <li>Avisarte cuando alguien se interese en un anuncio o comente una publicación tuya.</li>
+        <li>Prevenir fraudes y mejorar la plataforma.</li>
+      </ul>
+      <p className="prose">No vendemos tus datos personales.</p>
+
+      <h2 className="h2">Qué es público</h2>
+      <p className="prose">Lo que publicas en un anuncio y en tu perfil (nombre del perfil, ubicación aproximada, WhatsApp que autorices, fotos y descripción) lo puede ver cualquier persona y aparecer en buscadores. Solo mostramos el teléfono, WhatsApp y ubicación que el productor autoriza. La ubicación exacta de la finca es opcional.</p>
+
+      <h2 className="h2">Facebook e Instagram</h2>
+      <p className="prose">Con consentimiento del productor, los anuncios aprobados pueden difundirse en la Página de Facebook y en el Instagram de {BRAND.name}. Cuando una persona comenta una de esas publicaciones, recibimos el texto del comentario y el nombre de usuario público de quien comenta, los guardamos ligados al anuncio y se los mostramos al vendedor para que responda. No leemos mensajes privados.</p>
+
+      <h2 className="h2">Con quién compartimos datos</h2>
+      <p className="prose">Usamos proveedores para operar la plataforma: Supabase (cuentas, base de datos y archivos), Vercel (alojamiento del sitio), Meta (publicaciones y comentarios en Facebook e Instagram), OpenStreetMap (mapas) y Google Fonts (tipografías). Ellos tratan los datos solo para prestarnos ese servicio.</p>
+
+      <h2 className="h2">Tus derechos</h2>
+      <p className="prose">Puedes ver y corregir tus datos desde tu panel, y pedir la eliminación de tu cuenta y de tus datos en cualquier momento. Mira cómo hacerlo en <Link to="/eliminar-cuenta">Eliminar mi cuenta</Link>. También puedes escribirnos a hola@fincayapanama.com o por WhatsApp.</p>
+
+      <h2 className="h2">Reglas para publicar</h2>
       <ol className="prose list">
         <li>Quien publica es responsable de la veracidad del anuncio y de cumplir los requisitos sanitarios y legales del producto o animal.</li>
         <li>Solo mostramos el teléfono, WhatsApp y ubicación que el productor autoriza. La ubicación exacta de la finca es opcional.</li>
         <li>Podemos retirar anuncios que incumplan las normas o que sean reportados como fraudulentos.</li>
         <li>Los anuncios aprobados pueden difundirse en las redes sociales de la plataforma, con consentimiento del productor.</li>
         <li>La publicidad pagada se identifica siempre como tal.</li>
-        <li>Puedes pedir la eliminación de tu cuenta y tus datos escribiéndonos por WhatsApp.</li>
       </ol>
     </div>
   )
