@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { Header, Footer } from './components/ui'
 import { AutoPush } from './components/Notify'
 import { Home, Search, ListingPage, FarmPage, Farms, FarmsMapPage, Prices, ProductPrice, Safety, About, Faq, Privacy, DeleteAccount, NotFound } from './pages/public'
-import { Login, Publish, Dashboard } from './pages/account'
+import { Login, ResetPassword, Publish, Dashboard } from './pages/account'
 import Admin from './pages/admin/Admin'
 
 export default function App() {
@@ -31,6 +31,7 @@ export default function App() {
           <Route path="/privacidad" element={<Privacy />} />
           <Route path="/eliminar-cuenta" element={<DeleteAccount />} />
           <Route path="/entrar" element={<Login />} />
+          <Route path="/restablecer-contrasena" element={<ResetPassword />} />
           <Route path="/publicar" element={<Publish />} />
           <Route path="/panel/*" element={<Dashboard />} />
           <Route path="/admin/*" element={<Admin />} />
