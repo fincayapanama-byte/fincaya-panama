@@ -363,8 +363,11 @@ export const api = {
   },
   async replyComment(id, reply) {
     if (DEMO) { const c = load().comments.find((x) => x.id === id); Object.assign(c, { reply, replied_at: new Date().toISOString() }); save(); return }
-    ok(await supabase.from('comments').update({ reply, replied_at: new Date().toISOString() }).eq('id', id))
-    // La Edge Function meta-webhook/reply publica la respuesta en la red (Fase 2).
+    // La función publica la respuesta en Facebook/Instagram y la guarda si Meta la acepta
+    const { data, error } = await supabase.functions.invoke('reply-comment', { body: { comment_id: id, reply } })
+    if (error) throw new Error('No se pudo enviar la respuesta. Inténtalo de nuevo.')
+    if (!data?.ok) throw new Error(data?.error || 'No se pudo enviar la respuesta.')
+    return data
   },
   async reportPrice(user, p) {
     const row = { ...p, created_by: user.id, approved: false, is_reference: false, source: 'Reporte de productores', date: new Date().toISOString().slice(0, 10) }
