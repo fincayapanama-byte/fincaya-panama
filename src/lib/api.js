@@ -41,6 +41,19 @@ const matchCat = (l, cat) => {
 
 // ============================ helpers SB ============================
 const ok = ({ data, error }) => { if (error) throw error; return data }
+// Mensajes de acceso en español (Supabase los devuelve en inglés)
+const authMsg = (err) => {
+  const m = String(err?.message || '')
+  if (/invalid login credentials/i.test(m)) return 'Correo o contraseña incorrectos. Si no la recuerdas, usa «¿Olvidaste tu contraseña?».'
+  if (/email not confirmed/i.test(m)) return 'Falta confirmar tu correo. Revisa tu bandeja de entrada y la carpeta de spam.'
+  if (/already registered|already been registered/i.test(m)) return 'Ese correo ya tiene cuenta. Entra o recupera tu contraseña.'
+  if (/at least \d+ characters/i.test(m)) return 'La contraseña debe tener al menos 8 caracteres.'
+  if (/rate limit|only request this after|too many/i.test(m)) return 'Espera un minuto antes de volver a intentarlo.'
+  if (/same password|different from the old/i.test(m)) return 'La nueva contraseña debe ser distinta a la anterior.'
+  if (/session missing|not authenticated|jwt/i.test(m)) return 'El enlace venció. Pide uno nuevo desde «¿Olvidaste tu contraseña?».'
+  return m || 'No se pudo completar. Inténtalo de nuevo.'
+}
+const authOk = (res) => { if (res?.error) throw new Error(authMsg(res.error)); return res.data }
 const SEL = '*, farm:farms(*), category:categories(*)'
 const childSlugs = async (cat) => {
   const cats = await api.categories()
@@ -90,14 +103,27 @@ export const api = {
       if (!p) throw new Error('En modo demo usa los botones de acceso rápido.')
       return api.demoLogin(p.id)
     }
-    ok(await supabase.auth.signInWithPassword({ email, password }))
+    authOk(await supabase.auth.signInWithPassword({ email, password }))
+  },
+  async requestPasswordReset(email) {
+    if (DEMO) throw new Error('No disponible en modo demo.')
+    authOk(await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/restablecer-contrasena` }))
+  },
+  async setNewPassword(password) {
+    if (DEMO) throw new Error('No disponible en modo demo.')
+    authOk(await supabase.auth.updateUser({ password }))
+  },
+  async hasRecoverySession() {
+    if (DEMO) return false
+    const { data } = await supabase.auth.getSession()
+    return !!data?.session
   },
   async signUp({ email, password, full_name, phone }) {
     if (DEMO) {
       const p = { id: uid('u'), email, full_name, whatsapp: phone, role: 'productor', blocked: false, created_at: new Date().toISOString() }
       load().profiles.push(p); save(); return api.demoLogin(p.id)
     }
-    ok(await supabase.auth.signUp({ email, password, options: { data: { full_name, phone } } }))
+    authOk(await supabase.auth.signUp({ email, password, options: { data: { full_name, phone } } }))
   },
   async signOut() {
     if (DEMO) { demoUser = null; try { localStorage.removeItem(SESSION_KEY) } catch { /* */ } emit(null); return }
