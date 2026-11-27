@@ -338,6 +338,8 @@ function MyListings({ user }) {
 function MyComments({ user }) {
   const { data, reload } = useAsync(() => api.myComments(user), [user.id])
   const [draft, setDraft] = useState({})
+  const [sending, setSending] = useState('')
+  const [replyErr, setReplyErr] = useState('')
   if (!data) return <Loading />
   if (!data.length) return <p className="empty">Cuando alguien comente tus anuncios en Facebook o Instagram, lo verás aquí y te avisaremos por WhatsApp.</p>
   return (
@@ -346,12 +348,15 @@ function MyComments({ user }) {
         <div key={c.id} className="card comment">
           <p className="muted small"><span className={`net net--${c.network}`}>{c.network}</span> · {c.author_name} · <Ago iso={c.created_at} /> · en <Link to={`/anuncio/${c.listing?.slug}`}>{c.listing?.title}</Link></p>
           <p>{c.message}</p>
-          {c.reply ? <p className="reply"><strong>Tu respuesta:</strong> {c.reply}</p> : (
-            <form className="reply-form" onSubmit={async (e) => { e.preventDefault(); await api.replyComment(c.id, draft[c.id]); reload() }}>
+          {c.reply ? <p className="reply"><strong>Tu respuesta:</strong> {c.reply}</p> : (c.network === 'facebook' && c.external_comment_id) ? (
+            <p className="muted small">Responde este comentario directamente en Facebook. <a className="btn btn--sm" href={`https://www.facebook.com/${c.external_comment_id}`} target="_blank" rel="noopener noreferrer">Responder en Facebook</a></p>
+          ) : (
+            <form className="reply-form" onSubmit={async (e) => { e.preventDefault(); setReplyErr(''); setSending(c.id); try { await api.replyComment(c.id, draft[c.id]); reload() } catch (er) { setReplyErr(er.message || 'No se pudo enviar la respuesta.') } finally { setSending('') } }}>
               <input required placeholder="Escribe tu respuesta…" value={draft[c.id] || ''} onChange={(e) => setDraft({ ...draft, [c.id]: e.target.value })} />
-              <button className="btn btn--fill btn--sm">Responder</button>
+              <button className="btn btn--fill btn--sm" disabled={sending === c.id}>{sending === c.id ? 'Enviando…' : 'Responder'}</button>
             </form>
           )}
+          {replyErr && sending === '' && !c.reply && draft[c.id] && <p className="notice">{replyErr}</p>}
         </div>
       ))}
     </div>
