@@ -484,9 +484,25 @@ function BrandPosts() {
 }
 
 function Comments() {
-  const { data } = useAsync(() => api.admin.comments(), [])
+  const { data, reload } = useAsync(() => api.admin.comments(), [])
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const sync = async () => {
+    setBusy(true); setMsg('')
+    try {
+      const r = await api.admin.syncComments(30)
+      setMsg(`Revisamos ${r.checked} de ${r.posts} publicaciones. ${r.added ? `Comentarios nuevos: ${r.added}.` : 'No hay comentarios nuevos.'}${r.errors?.length ? ` Con avisos: ${r.errors[0]}` : ''}`)
+      reload()
+    } catch (e) { setMsg(e.message || 'No se pudo consultar Facebook e Instagram.') } finally { setBusy(false) }
+  }
   if (!data) return <Loading />
   return (
+    <>
+    <div className="card form-card">
+      <p className="muted">Los comentarios llegan solos desde Facebook e Instagram. Si falta alguno, búscalo aquí: revisa las publicaciones de los últimos 30 días.</p>
+      <button className="btn btn--fill" onClick={sync} disabled={busy}>{busy ? 'Buscando…' : 'Buscar comentarios nuevos'}</button>
+      {msg && <p className="notice">{msg}</p>}
+    </div>
     <div className="table-wrap"><table className="table">
       <thead><tr><th>Comentario</th><th>Anuncio</th><th>Estado</th></tr></thead>
       <tbody>{data.map((c) => (
@@ -497,6 +513,7 @@ function Comments() {
         </tr>
       ))}</tbody>
     </table></div>
+    </>
   )
 }
 
