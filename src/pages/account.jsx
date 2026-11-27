@@ -24,13 +24,14 @@ export function Login() {
   const submit = async (e) => {
     e.preventDefault(); setBusy(true); setMsg('')
     try {
-      if (mode === 'entrar') await api.signIn(f.email, f.password)
+      if (mode === 'olvido') { await api.requestPasswordReset(f.email); setMsg('Listo. Si ese correo tiene cuenta, te enviamos un enlace para crear una contraseña nueva. Revisa también el spam.') }
+      else if (mode === 'entrar') await api.signIn(f.email, f.password)
       else { await api.signUp(f); if (!DEMO) setMsg('Revisa tu correo para confirmar la cuenta y luego entra.') }
     } catch (err) { setMsg(err.message || 'No se pudo completar.') } finally { setBusy(false) }
   }
   return (
     <div className="wrap section narrow">
-      <Seo title={mode === 'entrar' ? 'Entrar' : 'Crear cuenta'} />
+      <Seo title={mode === 'registro' ? 'Crear cuenta' : 'Entrar'} />
       <div className="card form-card">
         <div className="tabs">
           <button className={mode === 'entrar' ? 'is-on' : ''} onClick={() => setMode('entrar')}>Entrar</button>
@@ -42,9 +43,12 @@ export function Login() {
             <Field label="WhatsApp" hint="Ej. 6291-3387. Aquí te avisamos de comentarios y clientes."><input required value={f.phone} onChange={set('phone')} inputMode="tel" /></Field>
           </>}
           <Field label="Correo"><input type="email" required value={f.email} onChange={set('email')} /></Field>
-          {!DEMO && <Field label="Contraseña"><input type="password" required minLength={8} value={f.password} onChange={set('password')} /></Field>}
+          {!DEMO && mode !== 'olvido' && <Field label="Contraseña"><input type="password" required minLength={8} value={f.password} onChange={set('password')} /></Field>}
+          {mode === 'olvido' && <p className="muted">Escribe tu correo y te enviamos un enlace para crear una contraseña nueva.</p>}
           {msg && <p className="notice">{msg}</p>}
-          <button className="btn btn--fill btn--block" disabled={busy}>{mode === 'entrar' ? 'Entrar' : 'Crear cuenta'}</button>
+          <button className="btn btn--fill btn--block" disabled={busy}>{mode === 'entrar' ? 'Entrar' : mode === 'olvido' ? 'Enviarme el enlace' : 'Crear cuenta'}</button>
+          {!DEMO && mode === 'entrar' && <button type="button" className="btn btn--ghost btn--block" onClick={() => { setMode('olvido'); setMsg('') }}>¿Olvidaste tu contraseña?</button>}
+          {mode === 'olvido' && <button type="button" className="btn btn--ghost btn--block" onClick={() => { setMode('entrar'); setMsg('') }}>Volver a entrar</button>}
         </form>
         {DEMO && (
           <div className="demo-login">
@@ -53,6 +57,53 @@ export function Login() {
             <button className="btn btn--ghost btn--sm" onClick={() => api.demoLogin('u-admin').then(() => nav('/admin'))}>Entrar como admin</button>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ================================ RESTABLECER CONTRASEÑA ================================
+export function ResetPassword() {
+  const nav = useNavigate()
+  const [ready, setReady] = useState(null) // null = comprobando
+  const [p1, setP1] = useState('')
+  const [p2, setP2] = useState('')
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(false)
+  useEffect(() => {
+    let alive = true
+    // El enlace del correo trae la sesión de recuperación; le damos un instante a Supabase para leerla
+    const t = setTimeout(async () => { const ok = await api.hasRecoverySession(); if (alive) setReady(ok) }, 700)
+    return () => { alive = false; clearTimeout(t) }
+  }, [])
+  const submit = async (e) => {
+    e.preventDefault(); setMsg('')
+    if (p1.length < 8) return setMsg('La contraseña debe tener al menos 8 caracteres.')
+    if (p1 !== p2) return setMsg('Las contraseñas no coinciden.')
+    setBusy(true)
+    try { await api.setNewPassword(p1); setDone(true); setTimeout(() => nav('/panel'), 1500) }
+    catch (err) { setMsg(err.message || 'No se pudo cambiar la contraseña.') } finally { setBusy(false) }
+  }
+  return (
+    <div className="wrap section narrow">
+      <Seo title="Nueva contraseña" noindex />
+      <div className="card form-card">
+        <h1 className="h2">Crear contraseña nueva</h1>
+        {ready === null && <p className="muted">Comprobando tu enlace…</p>}
+        {ready === false && <>
+          <p className="notice">El enlace venció o ya se usó. Pide uno nuevo.</p>
+          <Link className="btn btn--fill btn--block" to="/entrar">Volver a entrar</Link>
+        </>}
+        {ready && !done && (
+          <form onSubmit={submit} className="form">
+            <Field label="Contraseña nueva" hint="Mínimo 8 caracteres."><input type="password" required minLength={8} value={p1} onChange={(e) => setP1(e.target.value)} autoComplete="new-password" /></Field>
+            <Field label="Repite la contraseña"><input type="password" required minLength={8} value={p2} onChange={(e) => setP2(e.target.value)} autoComplete="new-password" /></Field>
+            {msg && <p className="notice">{msg}</p>}
+            <button className="btn btn--fill btn--block" disabled={busy}>Guardar contraseña</button>
+          </form>
+        )}
+        {done && <p className="notice">✅ Contraseña cambiada. Te llevamos a tu panel…</p>}
       </div>
     </div>
   )
