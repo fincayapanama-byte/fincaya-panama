@@ -511,6 +511,13 @@ export const api = {
       if (DEMO) { load().social_posts.filter((p) => p.listing_id === listingId).forEach((p) => { p.status = 'publicado'; p.permalink = '#' }); save(); return }
       ok(await supabase.functions.invoke('publish-social', { body: { listing_id: listingId, image_url: socialImage } }))
     },
+    async syncComments(days = 30) {
+      if (DEMO) return { ok: true, posts: 0, checked: 0, found: 0, added: 0, errors: [] }
+      const { data, error } = await supabase.functions.invoke('sync-comments', { body: { days } })
+      if (error) throw error
+      if (data && data.ok === false) throw new Error(data.error || 'No se pudo consultar')
+      return data
+    },
     async syncIma(days = 2) {
       if (DEMO) return { ok: true, days, upserted: 0, detail: { demo: 'En modo demo no se consulta el IMA' } }
       const { data, error } = await supabase.functions.invoke('sync-precios-ima', { body: { days } })
